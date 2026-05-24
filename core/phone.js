@@ -310,15 +310,22 @@ const Phone = (() => {
     function showAddWidgetMenu() {
         // 小组件类型列表
         const widgetTypes = [
-            { type: 'photo',   label: '📷 照片',    size: '2x2' },
-            { type: 'profile', label: '👤 信息条',  size: '4x2' },
-            { type: 'tag',     label: '🏷️ 标签条',  size: '2x2' },
-            { type: 'clock',   label: '🕐 时钟',    size: '2x2' },
-            { type: 'calendar',label: '📅 日历',    size: '2x2' },
-            { type: 'memo',    label: '📝 备忘录',  size: '4x2' },
-            { type: 'custom',  label: '✦ 自定义文字', size: '2x2' },
-            { type: 'status',  label: '⚡ 状态条',  size: '4x2' },
-        ];
+    { type: 'circle_photo',   label: '⭕ 圆形照片',    size: '2x2' },
+    { type: 'photo',          label: '🖼️ 方形照片',    size: '2x2' },
+    { type: 'profile',        label: '👤 信息条',      size: '4x2' },
+    { type: 'cute_player',    label: '🤍 心动播放器',  size: '4x2' },
+    { type: 'music',          label: '🎵 音乐播放器',  size: '4x2' },
+    { type: 'cute_pet',       label: '🦈 星空萌宠',    size: '2x2' },
+    { type: 'cute_date',      label: '☁️ 云朵日期',    size: '2x2' },
+    { type: 'cute_icons',     label: '✨ 可爱图标组',  size: '2x2' },
+    { type: 'tag',            label: '🏷️ 标签条',      size: '2x2' },
+    { type: 'clock',          label: '🕐 时钟',        size: '2x2' },
+    { type: 'calendar',       label: '📅 日历',        size: '2x2' },
+    { type: 'memo',           label: '📝 备忘录',      size: '4x2' },
+    { type: 'custom',         label: '✦ 自定义文字',   size: '2x2' },
+    { type: 'status',         label: '⚡ 状态条',      size: '4x2' },
+    { type: 'control_center', label: '🎛️ 控制中心',    size: '2x2' },
+];
 
         const listHtml = widgetTypes.map((w, i) =>
             `<div class="add-widget-item" data-idx="${i}">
