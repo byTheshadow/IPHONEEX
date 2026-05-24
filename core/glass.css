@@ -1,58 +1,63 @@
 /* core/glass.css */
-/*============================================IPHONEEX — Liquid Glass Design System
+/*============================================IPHONEEX — Monochrome Liquid Glass System
    ============================================ */
 
 :root {
-    /* Glass Properties */
-    --glass-bg: rgba(255, 255, 255, 0.08);
-    --glass-bg-heavy: rgba(255, 255, 255, 0.14);
-    --glass-bg-light: rgba(255, 255, 255, 0.04);
-    --glass-border: rgba(255, 255, 255, 0.18);
-    --glass-border-light: rgba(255, 255, 255, 0.08);
+    /* Glass — Dark Mode (default) */
+    --glass-bg: rgba(255, 255, 255, 0.06);
+    --glass-bg-heavy: rgba(255, 255, 255, 0.10);
+    --glass-bg-light: rgba(255, 255, 255, 0.03);
+    --glass-border: rgba(255, 255, 255, 0.10);
+    --glass-border-light: rgba(255, 255, 255, 0.06);
     --glass-blur: blur(40px) saturate(180%);
-    --glass-blur-light: blur(20px) saturate(150%);
-    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    --glass-shadow-light: 0 4px 16px rgba(0, 0, 0, 0.15);
-    --glass-radius: 20px;
-    --glass-radius-sm: 12px;
-    --glass-radius-xs: 8px;
+    --glass-blur-light: blur(24px) saturate(150%);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    --glass-shadow-light: 0 2px 12px rgba(0, 0, 0, 0.2);
+    --glass-radius: 22px;
+    --glass-radius-sm: 14px;
+    --glass-radius-xs: 10px;
 
-    /* Theme Colors */
-    --accent: #007AFF;
-    --accent-rgb: 0, 122, 255;
-    --accent-hover: #0a84ff;
-    --danger: #FF3B30;
-    --success: #34C759;
-    --warning: #FF9500;
+    /* Monochrome Accent */
+    --accent: #ffffff;
+    --accent-rgb: 255, 255, 255;
+    --accent-dim: rgba(255, 255, 255, 0.7);
+    --accent-subtle: rgba(255, 255, 255, 0.12);
+    --danger: #ff453a;
+    --success: #30d158;
+    --warning: #ffd60a;
 
     /* Text */
-    --text-primary: #f5f5f7;
-    --text-secondary: rgba(245, 245, 247, 0.6);
-    --text-tertiary: rgba(245, 245, 247, 0.35);
+    --text-primary: rgba(255, 255, 255, 0.92);
+    --text-secondary: rgba(255, 255, 255, 0.50);
+    --text-tertiary: rgba(255, 255, 255, 0.25);
 
     /* Spacing */
     --safe-top: env(safe-area-inset-top, 0px);
     --safe-bottom: env(safe-area-inset-bottom, 0px);
 
-    /* Phone Dimensions */
+    /* Phone */
     --phone-max-width: 430px;
     --phone-max-height: 932px;
     --statusbar-height: 54px;
-    --dock-height: 96px;
+    --dock-height: 100px;
 }
 
 /* Light Mode */
 [data-theme="light"] {
-    --glass-bg: rgba(255, 255, 255, 0.55);
-    --glass-bg-heavy: rgba(255, 255, 255, 0.72);
-    --glass-bg-light: rgba(255, 255, 255, 0.35);
-    --glass-border: rgba(255, 255, 255, 0.65);
-    --glass-border-light: rgba(255, 255, 255, 0.4);
-    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-    --glass-shadow-light: 0 4px 16px rgba(0, 0, 0, 0.05);
-    --text-primary: #1a1a2e;
-    --text-secondary: rgba(26, 26, 46, 0.55);
-    --text-tertiary: rgba(26, 26, 46, 0.3);
+    --glass-bg: rgba(255, 255, 255, 0.60);
+    --glass-bg-heavy: rgba(255, 255, 255, 0.78);
+    --glass-bg-light: rgba(255, 255, 255, 0.40);
+    --glass-border: rgba(255, 255, 255, 0.70);
+    --glass-border-light: rgba(255, 255, 255, 0.45);
+    --glass-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+    --glass-shadow-light: 0 2px 8px rgba(0, 0, 0, 0.04);
+    --accent: #1a1a1a;
+    --accent-rgb: 26, 26, 26;
+    --accent-dim: rgba(0, 0, 0, 0.65);
+    --accent-subtle: rgba(0, 0, 0, 0.08);
+    --text-primary: rgba(0, 0, 0, 0.88);
+    --text-secondary: rgba(0, 0, 0, 0.45);
+    --text-tertiary: rgba(0, 0, 0, 0.20);
 }
 
 /* Reset */
@@ -66,14 +71,17 @@ html, body {
     width: 100%;
     height: 100%;
     overflow: hidden;
-    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text','Helvetica Neue', 'PingFang SC', 'Microsoft YaHei', sans-serif;
     color: var(--text-primary);
-    background: #000;
+    background: #0a0a0a;
     -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    user-select: none;
+    -moz-osx-font-smoothing: grayscale;user-select: none;
     -webkit-user-select: none;
     touch-action: manipulation;
+}
+
+[data-theme="light"] body {
+    background: #e8e8e8;
 }
 
 /* Glass Classes */
@@ -104,39 +112,11 @@ html, body {
     box-shadow: var(--glass-shadow-light);
 }
 
-.glass-status {
-    background: rgba(0, 0, 0, 0.15);
-    backdrop-filter: blur(30px) saturate(180%);
-    -webkit-backdrop-filter: blur(30px) saturate(180%);
-}
-
-[data-theme="light"] .glass-status {
-    background: rgba(255, 255, 255, 0.35);
-}
-
 /* Scrollbar */
-::-webkit-scrollbar {
-    width: 3px;
-}
-::-webkit-scrollbar-track {
-    background: transparent;
-}
-::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,0.15);
-    border-radius: 3px;
-}
-[data-theme="light"] ::-webkit-scrollbar-thumb {
-    background: rgba(0,0,0,0.12);
-}
+::-webkit-scrollbar { width: 0; height: 0; }
 
 /* Utility */
 .hidden { display: none !important; }
-
-.text-ellipsis {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
 
 /* Animations */
 @keyframes fadeIn {
@@ -149,17 +129,12 @@ html, body {
     to { transform: translateY(0); }
 }
 
-@keyframes slideDown {
-    from { transform: translateY(-20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-}
-
 @keyframes scaleIn {
-    from { transform: scale(0.92); opacity: 0; }
+    from { transform: scale(0.88); opacity: 0; }
     to { transform: scale(1); opacity: 1; }
 }
 
-@keyframes breathe {
-    0%, 100% { opacity: 0.4; }
-    50% { opacity: 1; }
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
 }

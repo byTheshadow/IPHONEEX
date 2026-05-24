@@ -1,8 +1,4 @@
 // core/api.js
-// ============================================
-// OpenAI Compatible API Layer
-// ============================================
-
 const API = (() => {
     let cachedModels = [];
 
@@ -16,21 +12,13 @@ const API = (() => {
     async function fetchModels() {
         const { baseUrl, apiKey } = await getConfig();
         if (!baseUrl) throw new Error('API Base URL not configured');
-
         try {
             const res = await fetch(`${baseUrl}/models`, {
-                headers: {
-                    'Authorization': `Bearer ${apiKey}`
-                }
+                headers: { 'Authorization': `Bearer ${apiKey}` }
             });
-
-            if (!res.ok) throw new Error(`Failed to fetch models: ${res.status}`);
-
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
-            cachedModels = (data.data || data || []).map(m => ({
-                id: m.id,
-                name: m.id
-            }));
+            cachedModels = (data.data || data || []).map(m => ({ id: m.id, name: m.id }));
             return cachedModels;
         } catch (e) {
             Logger.error('Fetch models failed', e.message);
@@ -38,14 +26,12 @@ const API = (() => {
         }
     }
 
-    function getCachedModels() {
-        return cachedModels;
-    }
+    function getCachedModels() { return cachedModels; }
 
     async function chat(messages, options = {}) {
         const { baseUrl, apiKey, model } = await getConfig();
         if (!baseUrl) throw new Error('API Base URL not configured');
-        if (!model) throw new Error('Model not selected');
+        if (!model && !options.model) throw new Error('Model not selected');
 
         const body = {
             model: options.model || model,
@@ -58,10 +44,7 @@ const API = (() => {
 
         const res = await fetch(`${baseUrl}/chat/completions`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`
-            },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
             body: JSON.stringify(body),
             signal: options.signal
         });
@@ -90,17 +73,14 @@ const API = (() => {
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) break;
-
                 buffer += decoder.decode(value, { stream: true });
                 const lines = buffer.split('\n');
                 buffer = lines.pop() || '';
-
                 for (const line of lines) {
                     const trimmed = line.trim();
                     if (!trimmed || !trimmed.startsWith('data: ')) continue;
                     const data = trimmed.slice(6);
                     if (data === '[DONE]') continue;
-
                     try {
                         const json = JSON.parse(data);
                         const token = json.choices?.[0]?.delta?.content || '';
@@ -108,25 +88,16 @@ const API = (() => {
                             fullText += token;
                             if (onToken) onToken(token, fullText);
                         }
-                    } catch (e) {
-                        // Skip malformed JSON
-                    }
+                    } catch {}
                 }
             }
         } catch (e) {
-            if (e.name !== 'AbortError') {
-                Logger.error('Stream error', e.message);
-                throw e;
-            }
+            if (e.name !== 'AbortError') { Logger.error('Stream error', e.message); throw e; }
         }
 
-        if (onDone) onDone(fullText);return fullText;
+        if (onDone) onDone(fullText);
+        return fullText;
     }
 
-    return {
-        getConfig,
-        fetchModels,
-        getCachedModels,
-        chat
-    };
+    return { getConfig, fetchModels, getCachedModels, chat };
 })();

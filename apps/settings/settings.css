@@ -1,7 +1,4 @@
 /* apps/settings/settings.css */
-/*============================================Settings App Styles
-   ============================================ */
-
 .settings-user-card {
     display: flex;
     align-items: center;
@@ -15,7 +12,8 @@
     width: 60px;
     height: 60px;
     border-radius: 50%;
-    background: linear-gradient(135deg, var(--accent), rgba(var(--accent-rgb), 0.5));
+    background: var(--glass-bg-heavy);
+    border: 1px solid var(--glass-border);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -30,14 +28,12 @@
     object-fit: cover;
 }
 
-.settings-user-info {
-    flex: 1;
-    min-width: 0;
-}
+.settings-user-info { flex: 1; min-width: 0; }
 
 .settings-user-name {
     font-size: 20px;
     font-weight: 600;
+    letter-spacing: -0.3px;
 }
 
 .settings-user-desc {
@@ -46,26 +42,32 @@
     margin-top: 2px;
 }
 
-/* API Config */
+/* API Status */
 .api-status {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    font-size: 13px;
+    font-size: 12px;
     padding: 4px 10px;
     border-radius: 20px;
-    background: rgba(var(--accent-rgb), 0.15);
-    color: var(--accent);
+    background: var(--accent-subtle);
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.api-status.connected {
+    color: var(--success);
+    background: rgba(48, 209, 88, 0.12);
 }
 
 .api-status.error {
-    background: rgba(255, 59, 48, 0.15);
     color: var(--danger);
+    background: rgba(255, 69, 58, 0.12);
 }
 
 .api-status-dot {
-    width: 6px;
-    height: 6px;
+    width: 5px;
+    height: 5px;
     border-radius: 50%;
     background: currentColor;
 }
@@ -87,47 +89,44 @@
     transition: border-color 0.2s, transform 0.15s;
 }
 
-.color-option:hover {
-    transform: scale(1.1);
-}
+.color-option:hover { transform: scale(1.1); }
+.color-option.active { border-color: var(--text-primary); }
 
-.color-option.active {
-    border-color: var(--text-primary);
-}
-
-/* Log Viewer */
+/* Logs */
 .log-entry {
     padding: 10px 14px;
     border-bottom: 1px solid var(--glass-border-light);
     font-size: 12px;
-    font-family: 'SF Mono', 'Menlo', monospace;
+    font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
 }
 
 .log-entry-time {
     color: var(--text-tertiary);
     margin-bottom: 2px;
+    font-size: 10px;
 }
 
 .log-entry-level {
     display: inline-block;
     padding: 1px 6px;
     border-radius: 4px;
-    font-size: 10px;
-    font-weight: 700;
+    font-size: 9px;
+    font-weight: 800;
     margin-right: 6px;
+    letter-spacing: 0.5px;
 }
 
-.log-entry-level.INFO { background: rgba(0,122,255,0.2); color: #007AFF; }
-.log-entry-level.WARN { background: rgba(255,149,0,0.2); color: #FF9500; }
-.log-entry-level.ERROR { background: rgba(255,59,48,0.2); color: #FF3B30; }
+.log-entry-level.INFO { background: rgba(255,255,255,0.08); color: var(--text-secondary); }
+.log-entry-level.WARN { background: rgba(255,214,10,0.15); color: var(--warning); }
+.log-entry-level.ERROR { background: rgba(255,69,58,0.15); color: var(--danger); }
 
-.log-entry-message {
-    color: var(--text-primary);
-    word-break: break-all;
-}
+[data-theme="light"] .log-entry-level.INFO { background: rgba(0,0,0,0.06); }
+
+.log-entry-message { color: var(--text-primary); word-break: break-all; }
 
 .log-entry-detail {
     color: var(--text-tertiary);
     margin-top: 4px;
-    white-space: pre-wrap;word-break: break-all;
+    white-space: pre-wrap;
+    word-break: break-all;
 }

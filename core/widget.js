@@ -1,38 +1,41 @@
 // core/widget.js
-// ============================================
-// Widget System
-// ============================================
-
 const Widget = (() => {
-    const widgetTypes = {
+    const types = {
         clock: {
             name: '时钟',
-            size: 'small',
+            defaultSize: '2x2',
             render: () => {
                 const now = new Date();
-                const time = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
-                const date = now.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' });
+                const h = now.getHours().toString().padStart(2, '0');
+                const m = now.getMinutes().toString().padStart(2, '0');
+                const dateStr = now.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' });
+                const weekday = now.toLocaleDateString('zh-CN', { weekday: 'short' });
                 return `
                     <div class="widget-content">
                         <div class="widget-title">时钟</div>
-                        <div class="widget-body" style="flex-direction:column;gap:4px;">
-                            <div class="widget-value">${time}</div>
-                            <div style="font-size:13px;color:var(--text-secondary)">${date}</div>
+                        <div class="widget-body" style="align-items:flex-start">
+                            <div class="widget-value-large">${h}:${m}</div>
+                            <div class="widget-value-sub">${dateStr} ${weekday}</div>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             },
             update: (el) => {
                 const now = new Date();
-                const timeEl = el.querySelector('.widget-value');
-                const dateEl = el.querySelector('.widget-body div:last-child');
-                if (timeEl) timeEl.textContent = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
-                if (dateEl) dateEl.textContent = now.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' });
+                const h = now.getHours().toString().padStart(2, '0');
+                const m = now.getMinutes().toString().padStart(2, '0');
+                const v = el.querySelector('.widget-value-large');
+                if (v) v.textContent = `${h}:${m}`;
+                const s = el.querySelector('.widget-value-sub');
+                if (s) {
+                    const dateStr = now.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' });
+                    const weekday = now.toLocaleDateString('zh-CN', { weekday: 'short' });
+                    s.textContent = `${dateStr} ${weekday}`;
+                }
             }
         },
         calendar: {
-            name: '日历预览',
-            size: 'small',
+            name: '日历',
+            defaultSize: '2x2',
             render: () => {
                 const now = new Date();
                 const day = now.getDate();
@@ -40,102 +43,169 @@ const Widget = (() => {
                 const weekday = now.toLocaleDateString('zh-CN', { weekday: 'long' });
                 return `
                     <div class="widget-content">
-                        <div class="widget-title">${weekday}</div>
-                        <div class="widget-body" style="flex-direction:column;">
-                            <div style="font-size:13px;color:var(--accent)">${month}</div>
-                            <div class="widget-value" style="font-size:52px;line-height:1">${day}</div>
+                        <div class="widget-title" style="color:var(--danger);font-weight:800">${weekday}</div>
+                        <div class="widget-body" style="align-items:flex-start">
+                            <div style="font-size:13px;color:var(--text-secondary);font-weight:600">${month}</div>
+                            <div class="widget-value-large" style="font-size:56px;font-weight:300;letter-spacing:-3px;margin-top:-4px">${day}</div>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             }
         },
         memo: {
             name: '备忘录',
-            size: 'small',
+            defaultSize: '4x2',
             render: (data) => {
-                const text = data?.text || '点击编辑备忘录...';
-                return `
-                    <div class="widget-content">
-                        <div class="widget-title">📝 备忘录</div>
-                        <div class="widget-body">
-                            <div style="font-size:14px;color:var(--text-primary);word-break:break-word;overflow:hidden;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;">${text}</div>
-                        </div>
-                    </div>
-                `;
-            }
-        },
-        custom: {
-            name: '自定义文字',
-            size: 'small',
-            render: (data) => {
-                const title = data?.title || '自定义';
                 const text = data?.text || '点击编辑...';
+                const title = data?.title || '📝 备忘录';
                 return `
                     <div class="widget-content">
                         <div class="widget-title">${title}</div>
                         <div class="widget-body">
-                            <div style="font-size:14px;color:var(--text-primary);word-break:break-word;overflow:hidden;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;">${text}</div>
+                            <div style="font-size:14px;color:var(--text-primary);line-height:1.5;word-break:break-word;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;">${text}</div>
                         </div>
-                    </div>
-                `;
+                    </div>`;
+            }
+        },
+        custom: {
+            name: '自定义',
+            defaultSize: '2x2',
+            render: (data) => {
+                const title = data?.title || '✦';
+                const text = data?.text || '';
+                const emoji = data?.emoji || '';
+                return `
+                    <div class="widget-content" style="justify-content:center;align-items:center;text-align:center">
+                        ${emoji ? `<div style="font-size:32px;margin-bottom:8px">${emoji}</div>` : ''}
+                        <div style="font-size:13px;color:var(--text-secondary);font-weight:600;letter-spacing:0.5px">${title}</div>
+                        ${text ? `<div style="font-size:12px;color:var(--text-tertiary);margin-top:4px">${text}</div>` : ''}
+                    </div>`;
+            }
+        },
+        status: {
+            name: '状态',
+            defaultSize: '4x2',
+            render: (data) => {
+                const label = data?.label || 'IPHONEEX';
+                const sub = data?.sub || '✦ Ready';
+                return `
+                    <div class="widget-content">
+                        <div class="widget-body" style="flex-direction:row;align-items:center;justify-content:space-between">
+                            <div>
+                                <div style="font-size:16px;font-weight:700;letter-spacing:-0.3px">${label}</div>
+                                <div style="font-size:12px;color:var(--text-tertiary);margin-top:4px">${sub}</div>
+                            </div>
+                            <div style="font-size:28px;opacity:0.4">⚡</div>
+                        </div>
+                    </div>`;
             }
         }
     };
 
-    function createWidgetElement(widgetData) {
-        const type = widgetTypes[widgetData.type];
+    function create(widgetData) {
+        const type = types[widgetData.type];
         if (!type) return null;
 
-        const wrapper = document.createElement('div');
-        wrapper.className = `widget-wrapper widget-${widgetData.size || type.size} glass`;
-        wrapper.dataset.widgetId = widgetData.id;
-        wrapper.dataset.widgetType = widgetData.type;
-        wrapper.innerHTML = type.render(widgetData.data);
+        const el = document.createElement('div');
+        const size = widgetData.size || type.defaultSize;
+        el.className = `widget-wrapper widget-${size} glass`;
+        el.dataset.widgetId = widgetData.id;
+        el.dataset.widgetType = widgetData.type;
+        el.innerHTML = type.render(widgetData.data || {});
 
         // Long press to edit
         let pressTimer;
-        wrapper.addEventListener('pointerdown', () => {
+        const startPress = (e) => {
             pressTimer = setTimeout(() => {
+                e.preventDefault();
                 editWidget(widgetData);
             }, 600);
+        };
+        const cancelPress = () => clearTimeout(pressTimer);
+
+        el.addEventListener('pointerdown', startPress);
+        el.addEventListener('pointerup', cancelPress);
+        el.addEventListener('pointerleave', cancelPress);
+        el.addEventListener('pointermove', cancelPress);
+
+        el.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            editWidget(widgetData);
         });
-        wrapper.addEventListener('pointerup', () => clearTimeout(pressTimer));
-        wrapper.addEventListener('pointerleave', () => clearTimeout(pressTimer));
 
         // Click to open associated app
-        wrapper.addEventListener('click', () => {
-            if (widgetData.type === 'calendar') {
-                Router.open('calendar');
-            }
-        });
+        el.addEventListener('click', () => {
+            if (widgetData.type === 'calendar') Router.open('calendar');});
 
-        return wrapper;
+        return el;
     }
 
     async function editWidget(widgetData) {
-        const type = widgetTypes[widgetData.type];
+        const type = types[widgetData.type];
         if (!type) return;
+
+        let fields = '';
+        if (widgetData.type === 'custom') {
+            fields = `
+                <div class="form-group">
+                    <label class="form-label">Emoji</label>
+                    <input class="form-input" id="w-emoji" value="${widgetData.data?.emoji || ''}" placeholder="✦">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">标题</label>
+                    <input class="form-input" id="w-title" value="${widgetData.data?.title || ''}" placeholder="标题">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">内容</label>
+                    <textarea class="form-textarea" id="w-text" rows="3" placeholder="内容...">${widgetData.data?.text || ''}</textarea>
+                </div>`;
+        } else if (widgetData.type === 'memo') {
+            fields = `
+                <div class="form-group">
+                    <label class="form-label">标题</label>
+                    <input class="form-input" id="w-title" value="${widgetData.data?.title || ''}" placeholder="📝 备忘录">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">内容</label>
+                    <textarea class="form-textarea" id="w-text" rows="4" placeholder="写点什么...">${widgetData.data?.text || ''}</textarea>
+                </div>`;
+        } else if (widgetData.type === 'status') {
+            fields = `
+                <div class="form-group">
+                    <label class="form-label">标签</label>
+                    <input class="form-input" id="w-label" value="${widgetData.data?.label || ''}" placeholder="IPHONEEX">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">副标题</label>
+                    <input class="form-input" id="w-sub" value="${widgetData.data?.sub || ''}" placeholder="✦ Ready">
+                </div>`;
+        } else {
+            fields = `<div style="text-align:center;color:var(--text-secondary);padding:12px">此组件不可编辑</div>`;
+        }
 
         Phone.showModal({
             title: `编辑 ${type.name}`,
-            content: `
-                ${widgetData.type === 'custom' ? `
-                    <div class="form-group">
-                        <label class="form-label">标题</label>
-                        <input class="form-input" id="widget-edit-title" value="${widgetData.data?.title || ''}" placeholder="标题">
-                    </div>` : ''}
-                <div class="form-group">
-                    <label class="form-label">内容</label>
-                    <textarea class="form-textarea" id="widget-edit-text" placeholder="输入内容...">${widgetData.data?.text || ''}</textarea>
-                </div>
-            `,
+            content: fields,
             actions: [
-                { label: '取消', type: 'secondary' },
+                {
+                    label: '删除', type: 'secondary', onClick: async () => {
+                        await Store.del(Store.STORES.widgets, widgetData.id);
+                        Phone.refreshDesktop();
+                    }
+                },
                 {
                     label: '保存', type: 'primary', onClick: async () => {
-                        const text = document.getElementById('widget-edit-text')?.value || '';
-                        const title = document.getElementById('widget-edit-title')?.value || widgetData.data?.title;
-                        widgetData.data = { ...widgetData.data, text, title };
+                        const d = widgetData.data || {};
+                        const title = document.getElementById('w-title')?.value;
+                        const text = document.getElementById('w-text')?.value;
+                        const emoji = document.getElementById('w-emoji')?.value;
+                        const label = document.getElementById('w-label')?.value;
+                        const sub = document.getElementById('w-sub')?.value;
+                        if (title !== undefined) d.title = title;
+                        if (text !== undefined) d.text = text;
+                        if (emoji !== undefined) d.emoji = emoji;
+                        if (label !== undefined) d.label = label;
+                        if (sub !== undefined) d.sub = sub;
+                        widgetData.data = d;
                         await Store.put(Store.STORES.widgets, widgetData);
                         Phone.refreshDesktop();
                     }
@@ -145,14 +215,11 @@ const Widget = (() => {
     }
 
     function startUpdates() {
-        // Update clock widget every second
         setInterval(() => {
             document.querySelectorAll('[data-widget-type="clock"]').forEach(el => {
-                const type = widgetTypes.clock;
-                if (type.update) type.update(el);
+                types.clock.update(el);
             });
-        }, 1000);
-    }
+        }, 1000);}
 
-    return { widgetTypes, createWidgetElement, startUpdates };
+    return { types, create, startUpdates };
 })();
