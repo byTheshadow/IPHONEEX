@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- 背景 -->
+  <rect width="512" height="512" rx="115" fill="#1a1a2e"/>
+  <!-- 手机外壳 -->
+  <rect x="156" y="80" width="200" height="352" rx="32" fill="#2a2a45"/>
+  <!-- 屏幕 -->
+  <rect x="170" y="110" width="172" height="292" rx="18" fill="#3d3d60"/>
+  <!-- 刘海 -->
+  <rect x="220" y="110" width="72" height="22" rx="11" fill="#1a1a2e"/>
+  <!-- 星星装饰 -->
+  <circle cx="210" cy="200" r="3" fill="#e8e0d0" opacity="0.8"/>
+  <circle cx="260" cy="170" r="2" fill="#e8e0d0" opacity="0.6"/>
+  <circle cx="300" cy="210" r="2.5" fill="#e8e0d0" opacity="0.7"/>
+  <circle cx="240" cy="240" r="1.5" fill="#e8e0d0" opacity="0.5"/>
+  <circle cx="290" cy="250" r="2" fill="#e8e0d0" opacity="0.6"/>
+  <circle cx="220" cy="280" r="1.5" fill="#e8e0d0" opacity="0.4"/>
+  <circle cx="310" cy="170" r="1.5" fill="#e8e0d0" opacity="0.5"/>
+  <!-- 粉色爱心 -->
+  <text x="256" y="340" font-size="72" text-anchor="middle" dominant-baseline="middle">🌸</text>
+  <!-- Home 指示条 -->
+  <rect x="216" y="388" width="80" height="6" rx="3" fill="rgba(255,255,255,0.3)"/>
+</svg>
