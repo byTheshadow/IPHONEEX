@@ -129,3 +129,171 @@
   font-size: var(--font-size-sm);
   color: var(--text-on-app-sub);
 }
+/* ================================================================apps.css — 各App 内部样式
+================================================================ */
+
+/* ── 通用：空状态占位 ── */
+.app-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 12px;
+  color: var(--text-muted);
+}
+
+.app-empty__icon {
+  font-size: 48px;
+  opacity: 0.5;
+}
+
+.app-empty__text {
+  font-size: var(--font-size-sm);
+}
+
+/* ── 聊天 App ── */
+#chat-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-list-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(0,0,0,0.05);cursor: pointer;
+}
+
+.chat-list-item:active {
+  background: rgba(0,0,0,0.03);
+}
+
+.chat-list-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;background: rgba(0,0,0,0.06);
+}
+
+.chat-list-info {
+  flex: 1;min-width: 0;
+}
+
+.chat-list-name {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+}
+
+.chat-list-preview {
+  font-size: var(--font-size-sm);
+  color: var(--text-on-app-sub);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── 日历 App ── */
+#calendar-content {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── 朋友圈 App ── */
+#moments-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.moment-card {
+  background: #fff;
+  border-radius: var(--radius-md);
+  padding: 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+/* ── 设置 App ── */
+#settings-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-group {
+  background: #fff;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.settings-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+  cursor: pointer;
+  transition: background var(--duration-fast);
+}
+
+.settings-item:last-child {
+  border-bottom: none;
+}
+
+.settings-item:active {
+  background: rgba(0,0,0,0.03);
+}
+
+.settings-item__label {
+  font-size: var(--font-size-md);
+  color: var(--text-on-app);
+}
+
+.settings-item__value {
+  font-size: var(--font-size-sm);
+  color: var(--text-on-app-sub);
+}
+
+/* ── 壁纸选择按钮 ── */
+.wallpaper-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.wallpaper-picker__btn {
+  padding: 12px 20px;
+  border-radius: var(--radius-sm);
+  background: var(--color-primary);
+  color: #fff;
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  border: none;
+  transition: background var(--duration-fast);
+}
+
+.wallpaper-picker__btn:active {
+  background: #8eb5cc;
+}
+
+.wallpaper-picker__btn--clear {
+  background: rgba(255, 80, 80, 0.12);
+  color: #ff6b6b;
+}
+
+.wallpaper-picker__btn--clear:active {
+  background: rgba(255, 80, 80, 0.22);
+}
+
+.wallpaper-preview {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(0,0,0,0.08);
+}
