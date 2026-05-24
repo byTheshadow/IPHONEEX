@@ -1,6 +1,15 @@
 /* ================================================================
-   apps.css — 各App 内部样式
+   apps.css — 各 App 内部样式
 ================================================================ */
+
+/* ── App 内容区通用修复 ── */
+.app-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px 16px 40px;   /* 底部留足空间 */
+}
 
 /* ── 通用空状态 ── */
 .app-empty {
@@ -12,7 +21,6 @@
   gap: 12px;
   color: var(--text-muted);
 }
-
 .app-empty__icon { font-size: 48px; opacity: 0.5; }
 .app-empty__text { font-size: var(--font-size-sm); }
 
@@ -20,8 +28,13 @@
 #chat-content { display: flex; flex-direction: column; }
 
 .chat-list-item {
-  display: flex; align-items: center; gap: 12px;
-  padding: 12px 0; border-bottom: 1px solid rgba(0,0,0,0.05); cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+  cursor: pointer;
+  transition: background var(--duration-fast);
 }
 .chat-list-item:active { background: rgba(0,0,0,0.03); }
 .chat-list-avatar {
@@ -48,42 +61,58 @@
 /* ================================================================
    设置 App
 ================================================================ */
+
+/* App 视图本身的背景色 — 确保完全遮住桌面 */
+#app-settings {
+  background: #f2f0ec;
+}
+[data-theme="dark"] #app-settings {
+  background: #18181f;
+}
+
+/* 设置内容区：覆盖通用 padding，用自己的 */
 #settings-content {
-  display: flex; flex-direction: column; gap: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding-bottom: 60px;   /* 确保最后一项不被遮住 */
 }
 
 /* 分区标题 */
 .settings-section-title {
-  font-size: var(--font-size-sm);
+  font-size: 11px;
   font-weight: 700;
   color: var(--text-on-app-sub);
-  padding: 16px 4px 6px;
+  padding: 20px 4px 8px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.8px;
 }
+.settings-section-title:first-child { padding-top: 4px; }
 
-.settings-section-title:first-child {
-  padding-top: 0;
+[data-theme="dark"] .settings-section-title {
+  color: var(--text-muted);
 }
 
 /* 提示文字 */
 .settings-hint {
   font-size: var(--font-size-xs);
   color: var(--text-on-app-sub);
-  padding: 0 4px 6px;
+  padding: 0 4px 8px;
   line-height: 1.5;
 }
+[data-theme="dark"] .settings-hint { color: var(--text-muted); }
 
 /* 设置组 */
 .settings-group {
-  background: #fff;
+  background: #ffffff;
   border-radius: var(--radius-md);
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  margin-bottom: 8px;
 }
-
 [data-theme="dark"] .settings-group {
-  background: rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.07);
+  box-shadow: none;
 }
 
 /* 设置项 */
@@ -96,25 +125,22 @@
   cursor: pointer;
   transition: background var(--duration-fast);
   gap: 12px;
+  min-height: 52px;        /* 保证每行高度一致，不被截断 */
 }
-
 [data-theme="dark"] .settings-item {
   border-bottom-color: rgba(255,255,255,0.06);
 }
-
 .settings-item:last-child { border-bottom: none; }
-.settings-item:active { background: rgba(0,0,0,0.03); }
-[data-theme="dark"] .settings-item:active { background: rgba(255,255,255,0.04); }
+.settings-item:active { background: rgba(0,0,0,0.04); }
+[data-theme="dark"] .settings-item:active { background: rgba(255,255,255,0.05); }
 
 .settings-item__label {
   font-size: var(--font-size-md);
   color: var(--text-on-app);
   flex-shrink: 0;
+  white-space: nowrap;
 }
-
-[data-theme="dark"] .settings-item__label {
-  color: var(--text-primary);
-}
+[data-theme="dark"] .settings-item__label { color: var(--text-primary); }
 
 .settings-item__value {
   font-size: var(--font-size-sm);
@@ -124,25 +150,25 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  max-width: 55%;          /* 防止长文本把 label 挤出去 */
 }
-
-[data-theme="dark"] .settings-item__value {
-  color: var(--text-secondary);
-}
+[data-theme="dark"] .settings-item__value { color: var(--text-secondary); }
 
 .settings-item__right {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
 }
 
-/* 设置页头像预览 */
+/* 设置页头像小预览 */
 .settings-avatar-preview {
   width: 36px;
   height: 36px;
   border-radius: 50%;
   object-fit: cover;
-  border: 1.5px solid rgba(0,0,0,0.1);
+  border: 1.5px solid rgba(0,0,0,0.08);
+  flex-shrink: 0;
 }
 
 /* 头像编辑器大预览 */
@@ -153,13 +179,12 @@
   object-fit: cover;
   border: 3px solid rgba(255,255,255,0.15);
   box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  display: block;
+  margin: 0 auto;
 }
 
 /* ── Toggle 开关 ── */
-.settings-toggle {
-  cursor: pointer;
-  flex-shrink: 0;
-}
+.settings-toggle { cursor: pointer; flex-shrink: 0; }
 
 .settings-toggle__track {
   width: 48px;
@@ -168,44 +193,39 @@
   background: rgba(0,0,0,0.15);
   position: relative;
   transition: background var(--duration-normal);
+  pointer-events: none;    /* 点击事件由父级 settings-item 处理 */
 }
-
 [data-theme="dark"] .settings-toggle__track {
   background: rgba(255,255,255,0.12);
 }
-
 .settings-toggle--on .settings-toggle__track {
   background: var(--color-primary);
 }
-
 .settings-toggle__thumb {
   position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 22px;
-  height: 22px;
+  top: 3px; left: 3px;
+  width: 22px; height: 22px;
   border-radius: 50%;
   background: #fff;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
   transition: transform var(--duration-normal) var(--ease-spring);
 }
-
 .settings-toggle--on .settings-toggle__thumb {
   transform: translateX(20px);
 }
 
 /* ── 知识书条目 ── */
-.knowledge-item {
-  cursor: pointer;
-}
-
+.knowledge-item { cursor: pointer; }
 .knowledge-title {
   flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: var(--font-size-md);
+  color: var(--text-on-app);
 }
+[data-theme="dark"] .knowledge-title { color: var(--text-primary); }
 
 .knowledge-delete {
   color: #ff6b6b !important;
@@ -213,14 +233,12 @@
   flex-shrink: 0;
   padding: 4px 8px;
   cursor: pointer;
-}
-
-.knowledge-delete:hover {
-  background: rgba(255,80,80,0.1);
   border-radius: var(--radius-xs);
+  transition: background var(--duration-fast);
 }
+.knowledge-delete:hover { background: rgba(255,80,80,0.1); }
 
-/* ── 编辑器内的 textarea ── */
+/* ── Widget 编辑器内的 textarea ── */
 .we-textarea {
   min-height: 80px;
   resize: vertical;
@@ -232,6 +250,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  margin-top: 4px;
 }
 
 .we-image-url-btn {
@@ -243,8 +262,6 @@
   background: rgba(168,197,218,0.15);
   color: var(--color-primary);
   transition: background var(--duration-fast);
+  font-family: var(--font-system);
 }
-
-.we-image-url-btn:active {
-  background: rgba(168,197,218,0.25);
-}
+.we-image-url-btn:active { background: rgba(168,197,218,0.28); }
