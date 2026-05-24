@@ -1,0 +1,133 @@
+/* apps/settings/settings.css */
+/*============================================Settings App Styles
+   ============================================ */
+
+.settings-user-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    margin: 16px;
+    cursor: pointer;
+}
+
+.settings-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), rgba(var(--accent-rgb), 0.5));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.settings-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.settings-user-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.settings-user-name {
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.settings-user-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+/* API Config */
+.api-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: rgba(var(--accent-rgb), 0.15);
+    color: var(--accent);
+}
+
+.api-status.error {
+    background: rgba(255, 59, 48, 0.15);
+    color: var(--danger);
+}
+
+.api-status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+/* Color Picker */
+.color-options {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 8px 0;
+}
+
+.color-option {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid transparent;
+    transition: border-color 0.2s, transform 0.15s;
+}
+
+.color-option:hover {
+    transform: scale(1.1);
+}
+
+.color-option.active {
+    border-color: var(--text-primary);
+}
+
+/* Log Viewer */
+.log-entry {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--glass-border-light);
+    font-size: 12px;
+    font-family: 'SF Mono', 'Menlo', monospace;
+}
+
+.log-entry-time {
+    color: var(--text-tertiary);
+    margin-bottom: 2px;
+}
+
+.log-entry-level {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    margin-right: 6px;
+}
+
+.log-entry-level.INFO { background: rgba(0,122,255,0.2); color: #007AFF; }
+.log-entry-level.WARN { background: rgba(255,149,0,0.2); color: #FF9500; }
+.log-entry-level.ERROR { background: rgba(255,59,48,0.2); color: #FF3B30; }
+
+.log-entry-message {
+    color: var(--text-primary);
+    word-break: break-all;
+}
+
+.log-entry-detail {
+    color: var(--text-tertiary);
+    margin-top: 4px;
+    white-space: pre-wrap;word-break: break-all;
+}
