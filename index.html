@@ -29,21 +29,20 @@
                 <div class="status-notch"></div>
             </div>
             <div class="status-right">
-                <svg class="status-icon" width="17" height="12" viewBox="0 0 17 12">
-                    <rect x="0" y="7" width="3" height="5" rx="1" fill="currentColor"/>
-                    <rect x="4.5" y="4.5" width="3" height="7.5" rx="1" fill="currentColor"/>
-                    <rect x="9" y="2" width="3" height="10" rx="1" fill="currentColor"/>
-                    <rect x="13.5" y="0" width="3" height="12" rx="1" fill="currentColor" opacity="0.35"/>
+                <svg class="status-icon" width="17" height="12" viewBox="0 0 17 12" fill="none">
+                    <rect x="0" y="7" width="3" height="5" rx="0.5" fill="currentColor"/>
+                    <rect x="4.5" y="4.5" width="3" height="7.5" rx="0.5" fill="currentColor"/>
+                    <rect x="9" y="2" width="3" height="10" rx="0.5" fill="currentColor"/>
+                    <rect x="13.5" y="0" width="3" height="12" rx="0.5" fill="currentColor" opacity="0.35"/>
                 </svg>
-                <svg class="status-icon" width="16" height="12" viewBox="0 0 16 12">
-                    <path d="M1.5 5C3.5 2.5 5.6 1.5 8 1.5s4.5 1 6.5 3.5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-                    <path d="M48C5.2 6.5 6.5 5.8 8 5.8s2.8.7 4 2.2" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-                    <circle cx="8" cy="11" r="1.2" fill="currentColor"/>
+                <svg class="status-icon" width="16" height="12" viewBox="0 0 16 12" fill="none">
+                    <path d="M1.5 5C3.5 2.5 5.6 1.5 8 1.5S12.5 2.5 14.5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    <path d="M48C5.2 6.5 6.5 5.8 8 5.8S10.8 6.5 12 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11" r="1.2" fill="currentColor"/>
                 </svg>
-                <svg class="status-icon" width="25" height="12" viewBox="0 0 25 12">
-                    <rect x="0.5" y="0.5" width="20" height="11" rx="2.5" stroke="currentColor" stroke-width="1" fill="none"/>
-                    <rect x="2" y="2" width="15" height="8" rx="1.5" fill="currentColor"/>
-                    <path d="M22 4v4a2 2 0 0 0 0-4z" fill="currentColor" opacity="0.5"/>
+                <svg class="status-icon" width="25" height="12" viewBox="0 0 25 12" fill="none">
+                    <rect x="0.5" y="0.5" width="20" height="11" rx="2.5" stroke="currentColor" stroke-width="1"/>
+                    <rect x="2" y="2" width="15" height="8" rx="1" fill="currentColor"/>
+                    <rect x="22" y="3.5" width="2" height="5" rx="1" fill="currentColor" opacity="0.5"/>
                 </svg>
             </div>
         </div>
@@ -77,8 +76,8 @@
     <script src="core/scheduler.js"></script>
     <script src="core/router.js"></script>
     <script src="core/widget.js"></script>
-    <script src="core/phone.js"></script>
     <script src="apps/settings/settings.js"></script>
+    <script src="core/phone.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             Phone.init();
@@ -86,3 +85,4 @@
     </script>
 </body>
 </html>
+

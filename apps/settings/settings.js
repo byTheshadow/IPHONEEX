@@ -1,5 +1,5 @@
 // apps/settings/settings.js
-constSettingsApp = (() => {
+const SettingsApp = (() => {
     function escapeHtml(str) {
         if (!str) return '';
         const d = document.createElement('div');
@@ -7,10 +7,12 @@ constSettingsApp = (() => {
         return d.innerHTML;
     }
 
-    async function render() { return await renderMain(); }
+    async function render() {
+        return await renderMain();
+    }
 
     async function renderMain() {
-        const userName = await Store.getSetting('user_name','User');
+        const userName = await Store.getSetting('user_name', 'User');
         const userDesc = await Store.getSetting('user_desc', '点击设置个人资料');
         const userAvatar = await Store.getSetting('user_avatar', '');
         const theme = await Store.getSetting('theme', 'dark');
@@ -44,11 +46,11 @@ constSettingsApp = (() => {
                             <div class="settings-item" onclick="SettingsApp.nav('api')">
                                 <div class="settings-item-left">
                                     <div class="settings-item-icon" style="background:var(--glass-bg-heavy)">🔗</div>
-                                    <span class="settings-item-label">API设置</span>
+                                    <span class="settings-item-label">API 设置</span>
                                 </div>
                                 <div style="display:flex;align-items:center;gap:8px">
                                     ${apiUrl
-                                        ? `<span class="api-status connected"><span class="api-status-dot"></span>${apiModel || '未选模型'}</span>`
+                                        ? `<span class="api-status connected"><span class="api-status-dot"></span>${escapeHtml(apiModel) || '未选模型'}</span>`
                                         : `<span class="api-status error"><span class="api-status-dot"></span>未配置</span>`}
                                 <span style="color:var(--text-tertiary)">›</span>
                                 </div>
@@ -148,13 +150,14 @@ constSettingsApp = (() => {
             case 'wallpaper': html = await renderWallpaper(); break;
             case 'knowledge': html = await renderKnowledge(); break;
             case 'logs': html = await renderLogs(); break;
-            case 'data': html = await renderData(); break;default: html = await renderMain();
+            case 'data': html = await renderData(); break;
+            default: html = await renderMain();
         }
         el.innerHTML = html;
         if (view === 'api') initAPIView();
     }
 
-    // ---- Profile ----
+    //---- Profile----
     async function renderProfile() {
         const n = await Store.getSetting('user_name', '');
         const d = await Store.getSetting('user_desc', '');
@@ -191,7 +194,7 @@ constSettingsApp = (() => {
                                 <textarea class="form-textarea" id="pf-persona" rows="4" placeholder="你的身份、背景...">${escapeHtml(p)}</textarea>
                             </div>
                             <div class="form-group" style="margin-bottom:0">
-                                <label class="form-label">个人喜好 (AI参考)</label>
+                                <label class="form-label">个人喜好 (AI 参考)</label>
                                 <textarea class="form-textarea" id="pf-prefs" rows="4" placeholder="兴趣、习惯...">${escapeHtml(pr)}</textarea>
                             </div>
                         </div>
@@ -299,7 +302,7 @@ constSettingsApp = (() => {
 
     async function refreshModels() {
         const msg = document.getElementById('api-msg');
-        msg.innerHTML = '<span style="color:var(--text-secondary)">获取中...</span>';
+        if (msg) msg.innerHTML = '<span style="color:var(--text-secondary)">获取中...</span>';
         const url = document.getElementById('api-url')?.value;
         const key = document.getElementById('api-key')?.value;
         if (url) await Store.setSetting('api_base_url', url);
@@ -307,9 +310,9 @@ constSettingsApp = (() => {
         try {
             const models = await API.fetchModels();
             populateModels(models);
-            msg.innerHTML = `<span style="color:var(--success)">✓ ${models.length} 个模型</span>`;
+            if (msg) msg.innerHTML = `<span style="color:var(--success)">✓ 找到 ${models.length} 个模型</span>`;
         } catch (e) {
-            msg.innerHTML = `<span style="color:var(--danger)">✗ ${e.message}</span>`;
+            if (msg) msg.innerHTML = `<span style="color:var(--danger)">✗ ${escapeHtml(e.message)}</span>`;
         }
     }
 
@@ -337,7 +340,9 @@ constSettingsApp = (() => {
 
     async function testAPI() {
         const el = document.getElementById('api-test');
+        if (!el) return;
         el.innerHTML = '<span style="color:var(--text-secondary)">测试中...</span>';
+        // Save current values first
         await Store.setSetting('api_base_url', document.getElementById('api-url')?.value || '');
         await Store.setSetting('api_key', document.getElementById('api-key')?.value || '');
         await Store.setSetting('api_model', document.getElementById('api-model')?.value || '');
@@ -346,9 +351,9 @@ constSettingsApp = (() => {
                 [{ role: 'user', content: 'Say "OK" only.' }],
                 { stream: false, max_tokens: 10 }
             );
-            el.innerHTML = `<span style="color:var(--success)">✓ ${res}</span>`;
+            el.innerHTML = `<span style="color:var(--success)">✓ 回复: ${escapeHtml(res)}</span>`;
         } catch (e) {
-            el.innerHTML = `<span style="color:var(--danger)">✗ ${e.message}</span>`;
+            el.innerHTML = `<span style="color:var(--danger)">✗ ${escapeHtml(e.message)}</span>`;
         }
     }
 
@@ -391,8 +396,9 @@ constSettingsApp = (() => {
             img.src = src;
             img.classList.remove('hidden');
             document.getElementById('wallpaper-default').classList.add('hidden');};
-        if (url) await apply(url);
-        else if (file) {
+        if (url) {
+            await apply(url);
+        } else if (file) {
             const reader = new FileReader();
             reader.onload = (e) => apply(e.target.result);
             reader.readAsDataURL(file);
@@ -435,7 +441,7 @@ constSettingsApp = (() => {
                                     <div style="display:flex;align-items:center;gap:8px">
                                         <span style="font-size:12px;color:var(--text-tertiary)">${b.entries?.length || 0} 条</span>
                                         <span style="color:var(--text-tertiary)">›</span>
-                                    </div>
+                </div>
                                 </div>
                             </div>
                         </div>`).join('')}
@@ -447,39 +453,60 @@ constSettingsApp = (() => {
         Phone.showModal({
             title: '新建知识书',
             content: `
-                <div class="form-group"><label class="form-label">名称</label><input class="form-input" id="kb-n" placeholder="名称"></div>
-                <div class="form-group" style="margin-bottom:0"><label class="form-label">内容</label><textarea class="form-textarea" id="kb-c" rows="6" placeholder="知识内容..."></textarea></div>`,
+                <div class="form-group">
+                    <label class="form-label">名称</label>
+                    <input class="form-input" id="kb-n" placeholder="名称">
+                </div>
+                <div class="form-group" style="margin-bottom:0">
+                    <label class="form-label">内容</label>
+                    <textarea class="form-textarea" id="kb-c" rows="6" placeholder="知识内容..."></textarea>
+                </div>`,
             actions: [
                 { label: '取消', type: 'secondary' },
-                { label: '创建', type: 'primary', onClick: async () => {
-                    await Store.put(Store.STORES.knowledgeBooks, {
-                        id: 'kb_' + Date.now(), name: document.getElementById('kb-n')?.value || '未命名',
-                        scope: 'global', entries: [{ content: document.getElementById('kb-c')?.value || '', enabled: true }], createdAt: Date.now()
-                    });
-                    nav('knowledge');
-                }}
+                {
+                    label: '创建', type: 'primary', onClick: async () => {
+                        await Store.put(Store.STORES.knowledgeBooks, {
+                            id: 'kb_' + Date.now(),
+                            name: document.getElementById('kb-n')?.value || '未命名',
+                            scope: 'global',
+                            entries: [{ content: document.getElementById('kb-c')?.value || '', enabled: true }],
+                            createdAt: Date.now()
+                        });
+                        nav('knowledge');
+                    }
+                }
             ]
         });
     }
 
     async function importKB() {
         const input = document.createElement('input');
-        input.type = 'file'; input.accept = '.json';
+        input.type = 'file';
+        input.accept = '.json';
         input.onchange = async (e) => {
-            const file = e.target.files[0]; if (!file) return;
+            const file = e.target.files[0];
+            if (!file) return;
             try {
                 const data = JSON.parse(await file.text());
                 await Store.put(Store.STORES.knowledgeBooks, {
-                    id: 'kb_' + Date.now(), name: data.name || file.name.replace('.json', ''),
+                    id: 'kb_' + Date.now(),
+                    name: data.name || file.name.replace('.json', ''),
                     scope: 'global',
                     entries: Array.isArray(data.entries) ? data.entries :
-                        Array.isArray(data) ? data.map(d => ({ content: typeof d === 'string' ? d : JSON.stringify(d), enabled: true })) :
+                        Array.isArray(data) ? data.map(d => ({
+                            content: typeof d === 'string' ? d : JSON.stringify(d),
+                            enabled: true
+                        })) :
                         [{ content: JSON.stringify(data), enabled: true }],
                     createdAt: Date.now()
                 });
                 nav('knowledge');
             } catch (err) {
-                Phone.showModal({ title: '导入失败', content: `<div style="color:var(--danger)">${err.message}</div>`, actions: [{ label: '确定', type: 'primary' }] });
+                Phone.showModal({
+                    title: '导入失败',
+                    content: `<div style="color:var(--danger)">${escapeHtml(err.message)}</div>`,
+                    actions: [{ label: '确定', type: 'primary' }]
+                });
             }
         };
         input.click();
@@ -491,17 +518,33 @@ constSettingsApp = (() => {
         Phone.showModal({
             title: '编辑知识书',
             content: `
-                <div class="form-group"><label class="form-label">名称</label><input class="form-input" id="kb-en" value="${escapeHtml(book.name)}"></div>
-                <div class="form-group" style="margin-bottom:0"><label class="form-label">内容</label><textarea class="form-textarea" id="kb-ec" rows="8">${escapeHtml(book.entries?.map(e => e.content).join('\n---\n') || '')}</textarea></div>`,
+                <div class="form-group">
+                    <label class="form-label">名称</label>
+                    <input class="form-input" id="kb-en" value="${escapeHtml(book.name)}">
+                </div>
+                <div class="form-group" style="margin-bottom:0">
+                    <label class="form-label">内容</label>
+                    <textarea class="form-textarea" id="kb-ec" rows="8">${escapeHtml(book.entries?.map(e => e.content).join('\n---\n') || '')}</textarea>
+                </div>`,
             actions: [
-                { label: '删除', type: 'secondary', onClick: async () => { await Store.del(Store.STORES.knowledgeBooks, id); nav('knowledge'); } },
-                { label: '保存', type: 'primary', onClick: async () => {
-                    book.name = document.getElementById('kb-en')?.value || book.name;
-                    const c = document.getElementById('kb-ec')?.value || '';
-                    book.entries = c.split('\n---\n').map(s => ({ content: s.trim(), enabled: true })).filter(e => e.content);
-                    await Store.put(Store.STORES.knowledgeBooks, book);
-                    nav('knowledge');
-                }}
+                {
+                    label: '删除', type: 'secondary', onClick: async () => {
+                        await Store.del(Store.STORES.knowledgeBooks, id);
+                        nav('knowledge');
+                    }
+                },
+                {
+                    label: '保存', type: 'primary', onClick: async () => {
+                        book.name = document.getElementById('kb-en')?.value || book.name;
+                        const c = document.getElementById('kb-ec')?.value || '';
+                        book.entries = c.split('\n---\n').map(s => ({
+                            content: s.trim(),
+                            enabled: true
+                        })).filter(e => e.content);
+                        await Store.put(Store.STORES.knowledgeBooks, book);
+                        nav('knowledge');
+                    }
+                }
             ]
         });
     }
@@ -534,14 +577,22 @@ constSettingsApp = (() => {
             </div>`;
     }
 
-    async function clearLogs() { await Logger.clearAll(); nav('logs'); }
+    async function clearLogs() {
+        await Logger.clearAll();
+        nav('logs');
+    }
 
     async function copyLogs() {
         const logs = await Logger.getAll();
         const text = logs.map(l => `[${l.time}] [${l.level}] ${l.message}${l.detail ? '\n  ' + l.detail : ''}`).join('\n');
-        try { await navigator.clipboard.writeText(text); } catch {
-            const ta = document.createElement('textarea'); ta.value = text;
-            document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+        try {
+            await navigator.clipboard.writeText(text);} catch {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            ta.remove();
         }
     }
 
@@ -592,38 +643,48 @@ constSettingsApp = (() => {
     async function exportAll() {
         try {
             const data = {};
-            for (const [k, v] of Object.entries(Store.STORES)) data[k] = await Store.getAll(v);
+            for (const [k, v] of Object.entries(Store.STORES)) {
+                data[k] = await Store.getAll(v);
+            }
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
             a.download = `iphoneex_${new Date().toISOString().slice(0, 10)}.json`;
             a.click();
             URL.revokeObjectURL(a.href);
-        } catch (e) { Logger.error('Export failed', e.message); }
+        } catch (e) {
+            Logger.error('Export failed', e.message);
+        }
     }
 
     async function importAll() {
         const input = document.createElement('input');
-        input.type = 'file'; input.accept = '.json';
+        input.type = 'file';
+        input.accept = '.json';
         input.onchange = async (e) => {
-            const file = e.target.files[0]; if (!file) return;
+            const file = e.target.files[0];
+            if (!file) return;
             Phone.showModal({
                 title: '确认导入',
-                content: '<div style="text-align:center;color:var(--text-secondary)">将覆盖现有数据</div>',
+                content: '<div style="text-align:center;color:var(--text-secondary)">将覆盖现有数据，是否继续？</div>',
                 actions: [
                     { label: '取消', type: 'secondary' },
-                    { label: '导入', type: 'primary', onClick: async () => {
-                        try {
-                            const data = JSON.parse(await file.text());
-                            for (const [k, v] of Object.entries(Store.STORES)) {
-                                if (data[k] && Array.isArray(data[k])) {
-                                    await Store.clear(v);
-                                    for (const item of data[k]) await Store.put(v, item);
+                    {
+                        label: '导入', type: 'primary', onClick: async () => {
+                            try {
+                                const data = JSON.parse(await file.text());
+                                for (const [k, v] of Object.entries(Store.STORES)) {
+                                    if (data[k] && Array.isArray(data[k])) {
+                                        await Store.clear(v);
+                                        for (const item of data[k]) await Store.put(v, item);
+                                    }
                                 }
+                                location.reload();
+                            } catch (err) {
+                                Logger.error('Import failed', err.message);
                             }
-                            location.reload();
-                        } catch (err) { Logger.error('Import failed', err.message); }
-                    }}
+                        }
+                    }
                 ]
             });
         };
@@ -633,13 +694,17 @@ constSettingsApp = (() => {
     async function clearAll() {
         Phone.showModal({
             title: '⚠️ 清除全部数据',
-            content: '<div style="text-align:center;color:var(--danger);font-size:14px">此操作不可撤销</div>',
+            content: '<div style="text-align:center;color:var(--danger);font-size:14px">此操作不可撤销，确定要清除所有数据吗？</div>',
             actions: [
                 { label: '取消', type: 'secondary' },
-                { label: '确认清除', type: 'primary', onClick: async () => {
-                    for (const v of Object.values(Store.STORES)) await Store.clear(v);
-                    location.reload();
-                }}
+                {
+                    label: '确认清除', type: 'primary', onClick: async () => {
+                        for (const v of Object.values(Store.STORES)) {
+                            await Store.clear(v);
+                        }
+                        location.reload();
+                    }
+                }
             ]
         });
     }
@@ -654,19 +719,36 @@ constSettingsApp = (() => {
     async function toggleStatusBar(show) {
         await Store.setSetting('show_statusbar', show);
         const sb = document.getElementById('status-bar');
-        if (show) sb.classList.remove('hidden-bar'); else sb.classList.add('hidden-bar');
+        if (show) sb.classList.remove('hidden-bar');
+        else sb.classList.add('hidden-bar');
     }
 
-    async function toggleBg(on) { Scheduler.setEnabled(on); }
+    async function toggleBg(on) {
+        Scheduler.setEnabled(on);
+    }
 
     return {
-        render, init: () => {}, nav, saveProfile, changeAvatar,
-        saveAPI, refreshModels, testAPI,
-        applyWP, resetWP,
-        addKB, importKB, editKB,
-        clearLogs, copyLogs,
-        exportAll, importAll, clearAll,
-        toggleTheme, toggleStatusBar, toggleBg
+        render,
+        init: () => {},
+        nav,
+        saveProfile,
+        changeAvatar,
+        saveAPI,
+        refreshModels,
+        testAPI,
+        applyWP,
+        resetWP,
+        addKB,
+        importKB,
+        editKB,
+        clearLogs,
+        copyLogs,
+        exportAll,
+        importAll,
+        clearAll,
+        toggleTheme,
+        toggleStatusBar,
+        toggleBg
     };
 })();
 
