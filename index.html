@@ -1,153 +1,85 @@
+<!-- index.html -->
 <!DOCTYPE html>
-<html lang="zh-CN" data-theme="dark">
+<html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#1a1a2e" />
-  <meta name="mobile-web-app-capable" content="yes" />
-
-  <title>IPHONEEX -虚拟掌机</title>
-
-  <!-- Favicon (内联 SVG，不需要外部文件) -->
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📱</text></svg>" />
-
-  <!-- PWA Manifest -->
-  <link rel="manifest" href="manifest.json" />
-
-  <!-- Styles -->
-  <link rel="stylesheet" href="css/root.css" />
-  <link rel="stylesheet" href="css/phone.css" />
-  <link rel="stylesheet" href="css/desktop.css" />
-  <link rel="stylesheet" href="css/apps.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0a0a1a">
+    <title>IPHONEEX</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="core/glass.css">
+    <link rel="stylesheet" href="core/phone.css">
+    <link rel="stylesheet" href="apps/settings/settings.css">
 </head>
 <body>
-
-  <!-- ============================================================手机外壳 (Phone Shell)============================================================ -->
-  <div id="phone-shell" class="phone-shell" role="main" aria-label="虚拟手机">
-
-    <!-- 顶部装饰：摄像头 + 扬声器 -->
-    <div class="phone-notch" aria-hidden="true">
-      <div class="notch-camera"></div>
-      <div class="notch-speaker"></div>
-    </div>
-
-    <!--── 状态栏 (Status Bar) ── -->
-    <header id="status-bar" class="status-bar" role="banner" aria-label="状态栏">
-      <span class="status-time" id="status-time" aria-live="polite">00:00</span>
-      <div class="status-icons" aria-hidden="true">
-        <span class="status-icon icon-wifi">📶</span>
-        <span class="status-icon icon-signal">4G</span>
-        <span class="status-icon icon-battery" id="status-battery">🔋</span>
-      </div>
-    </header>
-
-    <!-- ──屏幕主体 (Screen Body) ── -->
-    <div id="screen" class="screen">
-
-      <!-- 星空背景粒子层 -->
-      <canvas id="starfield-canvas" class="starfield-canvas" aria-hidden="true"></canvas>
-
-      <!--── 桌面滑动容器 (Desktop Slider) ── -->
-      <div id="desktop-slider" class="desktop-slider" role="region" aria-label="桌面">
-
-        <!-- 桌面页0 -->
-        <div class="desktop-page" id="desktop-page-0" data-page="0">
-          <div class="widget-grid" id="widget-grid-0" role="list" aria-label="小组件"></div>
-          <div class="app-icon-grid" id="app-icon-grid-0" role="list" aria-label="应用图标"></div>
+    <div id="phone-container">
+        <!-- Status Bar -->
+        <div id="status-bar" class="glass-status">
+            <div class="status-left">
+                <span id="status-time">12:00</span>
+            </div>
+            <div class="status-center">
+                <div class="status-notch"></div>
+            </div>
+            <div class="status-right">
+                <span class="status-signal">
+                    <svg width="16" height="12" viewBox="0 0 16 12"><rect x="0" y="8" width="3" height="4" rx="0.5" fill="currentColor"/><rect x="4.5" y="5" width="3" height="7" rx="0.5" fill="currentColor"/><rect x="9" y="2" width="3" height="10" rx="0.5" fill="currentColor"/><rect x="13.5" y="0" width="3" height="12" rx="0.5" fill="currentColor" opacity="0.3"/></svg>
+                </span>
+                <span class="status-wifi">
+                    <svg width="16" height="12" viewBox="0 0 16 12"><path d="M8 10.5a1.5 1.5 0 1103 1.5 1.5 0 010-3z" fill="currentColor"/><path d="M4.5 8.5C5.5 7.2 6.7 6.5 8 6.5s2.5.7 3.5 2" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M1.5 5.5C3.3 3.2 5.5 2 8 2s4.7 1.2 6.5 3.5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+                </span>
+                <span class="status-battery">
+                    <svg width="22" height="12" viewBox="0 0 22 12"><rect x="0" y="0" width="19" height="12" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/><rect x="2" y="2" width="14" height="8" rx="1" fill="currentColor"/><rect x="20" y="3.5" width="2" height="5" rx="0.5" fill="currentColor"/></svg>
+                </span>
+            </div>
         </div>
 
-        <!-- 桌面页 1 -->
-        <div class="desktop-page" id="desktop-page-1" data-page="1">
-          <div class="widget-grid" id="widget-grid-1" role="list" aria-label="小组件"></div>
-          <div class="app-icon-grid" id="app-icon-grid-1" role="list" aria-label="应用图标"></div>
-        </div></div>
+        <!-- Desktop Pages Container -->
+        <div id="desktop-viewport"><div id="desktop-pages">
+                <!-- Pages will be generated by JS -->
+            </div>
+            <div id="page-dots"></div>
+        </div>
 
-      <!-- ──桌面分页指示器 ── -->
-      <div id="page-indicator" class="page-indicator" role="tablist" aria-label="桌面页码"></div>
+        <!-- Dock -->
+        <div id="dock" class="glass">
+            <!-- Dock icons populated by JS -->
+        </div>
 
-      <!-- ── App 视图层── -->
-      <div id="app-layer" class="app-layer" aria-live="polite"><section id="app-chat" class="app-view" data-app="chat" aria-label="聊天" hidden>
-          <div class="app-header">
-            <button class="btn-back" aria-label="返回桌面">←</button>
-            <h2 class="app-title">消息</h2>
-          </div>
-          <div class="app-content" id="chat-content"></div>
-        </section>
+        <!-- App View Layer -->
+        <div id="app-layer" class="hidden">
+            <div id="app-content"></div>
+        </div>
 
-        <section id="app-calendar" class="app-view" data-app="calendar" aria-label="日历" hidden>
-          <div class="app-header">
-            <button class="btn-back" aria-label="返回桌面">←</button>
-            <h2 class="app-title">日历</h2>
-          </div>
-          <div class="app-content" id="calendar-content"></div>
-        </section>
+        <!-- Modal Layer -->
+        <div id="modal-layer" class="hidden"></div>
 
-        <section id="app-moments" class="app-view" data-app="moments" aria-label="朋友圈" hidden>
-          <div class="app-header">
-            <button class="btn-back" aria-label="返回桌面">←</button>
-            <h2 class="app-title">朋友圈</h2>
-          </div>
-          <div class="app-content" id="moments-content"></div>
-        </section>
-
-        <section id="app-settings" class="app-view" data-app="settings" aria-label="设置" hidden>
-          <div class="app-header">
-            <button class="btn-back" aria-label="返回桌面">←</button>
-            <h2 class="app-title">设置</h2>
-          </div>
-          <div class="app-content" id="settings-content"></div>
-        </section>
-
-      </div>
-
-      <!-- ── 系统通知横幅 ── -->
-      <div id="notification-banner" class="notification-banner" role="alert" aria-live="assertive" aria-atomic="true" hidden>
-        <img class="notif-avatar" id="notif-avatar" src="" alt="" />
-        <div class="notif-body">
-          <span class="notif-name" id="notif-name"></span>
-          <span class="notif-text" id="notif-text"></span>
-        </div></div>
-
+        <!-- Context Menu Layer -->
+        <div id="context-menu-layer" class="hidden"></div>
     </div>
 
-    <!-- ── Dock 栏 ── -->
-    <nav id="dock" class="dock" role="navigation" aria-label="Dock 快捷栏">
-      <button class="dock-item" data-app="chat" aria-label="聊天">
-        <span class="dock-icon">💬</span>
-      </button>
-      <button class="dock-item" data-app="settings" aria-label="设置">
-        <span class="dock-icon">⚙️</span>
-      </button>
-      <button class="dock-item dock-item--home" id="btn-home" aria-label="主屏幕">
-        <span class="dock-icon">📷</span>
-      </button>
-      <button class="dock-item" data-app="moments" aria-label="朋友圈">
-        <span class="dock-icon">🌸</span>
-      </button></nav>
+    <!-- Wallpaper Layer (behind everything) -->
+    <div id="wallpaper-layer">
+        <div id="wallpaper-default"></div>
+        <img id="wallpaper-custom" class="hidden" alt="">
+    </div>
 
-    <!-- 底部 Home 指示条 -->
-    <div class="phone-home-indicator" aria-hidden="true"></div>
-
-  </div>
-
-  <!-- ============================================================
-       全局 Loading遮罩
-  ============================================================ -->
-  <div id="loading-screen" class="loading-screen" role="status" aria-label="加载中">
-    <div class="loading-logo">📱</div>
-    <p class="loading-text">启动中…</p>
-    <div class="loading-bar"><div class="loading-bar-fill"></div></div>
-  </div>
-
-  <!-- ============================================================
-       localForage（本地文件，避免 CDN 被追踪保护拦截）
-  ============================================================ -->
-  <script src="libs/localforage.min.js"></script>
-
-  <!-- ============================================================
-       主入口 (ES Module)
-  ============================================================ -->
-  <script type="module" src="js/main.js"></script>
-
+    <!-- Scripts -->
+    <script src="core/store.js"></script>
+    <script src="core/logger.js"></script>
+    <script src="core/api.js"></script>
+    <script src="core/scheduler.js"></script>
+    <script src="core/router.js"></script>
+    <script src="core/phone.js"></script>
+    <script src="core/widget.js"></script>
+    <script src="apps/settings/settings.js"></script>
+    <script>
+        // Boot
+        document.addEventListener('DOMContentLoaded', () => {
+            Phone.init();
+        });
+    </script>
 </body>
 </html>
