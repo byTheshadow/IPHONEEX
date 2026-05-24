@@ -17,15 +17,6 @@ const ChatApp = (() => {
     let abortCtrl = null;
     let stickerPanelOpen = false;
 
-    /* ======== SVG 图标（不用emoji） ======== */
-    const ICONS = {
-        play: '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>',
-        money: '<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L10 14v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 54.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>',
-        pin: '<svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>',
-        gift: '<svg viewBox="0 0 24 24"><path d="M20 6h-2.18c.11-.31.18-.65.18-1 0-1.66-1.34-3-3-3-1.05 0-1.96.54-2.5 1.35l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM9 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm11 15H4v-2h16v2zm0-5H4V8h5.08L7 10.838.62 12 118.76l1-1.361 1.36L15.38 12 17 10.83 14.92 8H20v6z"/></svg>',
-        article: '<svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>'
-    };
-
     /* ======== 主入口 ======== */
     async function render(params) {
         if (params && params.chatId) return await renderChatView(params.chatId);
@@ -42,14 +33,13 @@ const ChatApp = (() => {
     async function renderList() {
         return `<div class="chat-list-container">
             <div class="app-header">
-                <button class="app-header-btn app-back-btn" onclick="Router.close()">返回</button>
+                <button class="app-header-btn app-back-btn" onclick="Router.closeAll()">返回</button>
                 <span class="app-header-title">聊天</span>
                 <span style="width:60px"></span>
             </div>
             <div class="chat-search-bar">
                 <input class="chat-search-input" placeholder="搜索会话..." id="chat-search"></div>
-            <div class="chat-contact-list" id="chat-list-body">
-                <div style="display:flex;justify-content:center;padding:40px"><div class="chat-spinner"></div></div>
+            <div class="chat-contact-list" id="chat-list-body"><div style="display:flex;justify-content:center;padding:40px"><div class="chat-spinner"></div></div>
             </div>
             <button class="chat-fab" id="chat-fab" title="新建">＋</button>
         </div>`;
@@ -81,7 +71,7 @@ const ChatApp = (() => {
         const chats = await Store.getAll(Store.STORES.chats);
         const chars = await Store.getAll(Store.STORES.characters);
         const charMap = {};
-        chars.forEach(c => charMap[c.id] = c);
+        chars.forEach(c => { charMap[c.id] = c; });
 
         let filtered = chats.sort((a, b) => (b.updatedAt ||0) - (a.updatedAt || 0));
         if (search) {
@@ -131,15 +121,20 @@ const ChatApp = (() => {
             [
                 { label: '打开', icon: '↗', onClick: () => Router.open('chat', { chatId }) },
                 { type: 'separator' },
-                { label: '删除会话', icon: '🗑', danger: true, onClick: () => confirmDeleteChat(chatId) }
+                { label: '删除会话及角色', icon: '🗑', danger: true, onClick: () => confirmDeleteChat(chatId, true) },
+                { label: '仅删除会话', icon: '✕', danger: true, onClick: () => confirmDeleteChat(chatId, false) }
             ]
         );
     }
 
-    async function confirmDeleteChat(chatId) {
+    async function confirmDeleteChat(chatId, deleteChars) {
+        const chat = await Store.get(Store.STORES.chats, chatId);
+        const msg = deleteChars
+            ? '确定删除此会话、所有消息以及关联的角色卡？此操作不可恢复。'
+            : '确定删除此会话及所有消息？角色卡将保留。';
         Phone.showModal({
             title: '删除会话',
-            content: '<div style="font-size:14px;color:var(--text-secondary);text-align:center">确定删除此会话及所有消息？此操作不可恢复。</div>',
+            content: `<div style="font-size:14px;color:var(--text-secondary);text-align:center">${msg}</div>`,
             actions: [
                 { label: '取消', type: 'secondary' },
                 { label: '删除', type: 'primary', onClick: async () => {
@@ -149,8 +144,21 @@ const ChatApp = (() => {
                         for (const m of msgs) await Store.del(Store.STORES.messages, m.id);
                         const sums = await Store.getAllByIndex(Store.STORES.summaries, 'chatId', chatId);
                         for (const s of sums) await Store.del(Store.STORES.summaries, s.id);
+                        if (deleteChars && chat) {
+                            for (const cid of (chat.characterIds || [])) {
+                                // Check if char is used in other chats
+                                const allChats = await Store.getAll(Store.STORES.chats);
+                                const usedElsewhere = allChats.some(c => c.id !== chatId && c.characterIds?.includes(cid));
+                                if (!usedElsewhere) {
+                                    await Store.del(Store.STORES.characters, cid);
+                                    // Also delete diary
+                                    const diaries = await Store.getAllByIndex(Store.STORES.diaries, 'charId', cid);
+                                    for (const d of diaries) await Store.del(Store.STORES.diaries, d.id);
+                                }
+                            }
+                        }
                         await Store.del(Store.STORES.chats, chatId);
-                        showToast('会话已删除');
+                        showToast('已删除');
                         await refreshListBody();
                     } catch (e) { showToast('删除失败: ' + e.message); }
                 }}
@@ -175,52 +183,13 @@ const ChatApp = (() => {
     }
 
     /* ============================================
-       创建会话 — 新建聊天 = 新建角色 + 直接进入
+       创建会话
        ============================================ */
-    async function createNewChat(type) {
+    function createNewChat(type) {
         if (type === 'single') {
-            // 直接弹出角色创建表单，创建完直接进入聊天
             openCharCreatorForChat();
         } else if (type === 'group') {
-            const chars = await Store.getAll(Store.STORES.characters);
-            if (chars.length < 2) {
-                showToast('请先至少创建2个角色（通过新建聊天）');
-                return;
-            }
-            const charChecks = chars.map(c => `
-                <label style="display:flex;align-items:center;gap:10px;padding:10px 0;font-size:14px;color:var(--text-primary);cursor:pointer;border-bottom:1px solid var(--glass-border-light)">
-                    <input type="checkbox" value="${c.id}">
-                    <div style="width:32px;height:32px;border-radius:50%;background:var(--glass-bg-heavy);display:flex;align-items:center;justify-content:center;font-size:14px;overflow:hidden;flex-shrink:0;border:1px solid var(--glass-border-light)">${c.avatar ? `<img src="${escapeHtml(c.avatar)}" style="width:100%;height:100%;object-fit:cover">` : (c.name?.[0] || '👤')}</div>
-                    <span>${escapeHtml(c.name)}</span>
-                </label>`).join('');Phone.showModal({
-                title: '新建群聊',
-                content: `
-                    <div class="form-group">
-                        <label class="form-label">群名称</label>
-                        <input class="form-input" id="group-name" placeholder="群聊名称">
-                    </div>
-                    <div class="form-group" style="margin-bottom:0">
-                        <label class="form-label">选择成员（至少2个）</label>
-                        <div id="group-members" style="max-height:200px;overflow-y:auto">${charChecks}</div>
-                    </div>`,
-                actions: [
-                    { label: '取消', type: 'secondary' },
-                    { label: '创建', type: 'primary', onClick: async () => {
-                        const name = document.getElementById('group-name').value.trim();
-                        const selected = [];
-                        document.querySelectorAll('#group-members input:checked').forEach(cb => selected.push(cb.value));
-                        if (selected.length < 2) { showToast('请至少选择2个角色'); return; }
-                        const chat = {
-                            id: 'chat_' + uid(), type: 'group', name: name || '群聊',
-                            characterIds: selected, messageCount: 0, lastMessage: '',
-                            updatedAt: Date.now(), createdAt: Date.now()
-                        };
-                        await Store.put(Store.STORES.chats, chat);
-                        showToast('群聊已创建');
-                        Router.open('chat', { chatId: chat.id });
-                    }}
-                ]
-            });
+            openGroupCreator();
         }
     }
 
@@ -233,9 +202,8 @@ const ChatApp = (() => {
                     <div style="flex:1">
                         <div class="form-group" style="margin-bottom:0">
                             <label class="form-label">头像 URL</label>
-                            <input class="form-input" id="char-avatar" placeholder="https://..." oninput="document.getElementById('char-avatar-preview').innerHTML=this.value?'<img src=\\''+this.value+'\\' alt=\\\"\\\" style=\\'width:100%;height:100%;object-fit:cover\\'>':'👤'">
-                        </div>
-                    </div>
+                            <input class="form-input" id="char-avatar" placeholder="https://...">
+                        </div></div>
                 </div>
                 <div class="form-group">
                     <label class="form-label">角色名称</label>
@@ -276,6 +244,66 @@ const ChatApp = (() => {
                 }}
             ]
         });
+
+        // Live avatar preview
+        setTimeout(() => {
+            const avatarInput = document.getElementById('char-avatar');
+            const preview = document.getElementById('char-avatar-preview');
+            if (avatarInput && preview) {
+                avatarInput.addEventListener('input', () => {
+                    const url = avatarInput.value.trim();
+                    if (url) {
+                        preview.innerHTML = `<img src="${escapeHtml(url)}" alt="" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.textContent='👤'">`;
+                    } else {
+                        preview.textContent = '👤';
+                    }
+                });
+            }
+        }, 100);
+    }
+
+    async function openGroupCreator() {
+        const chars = await Store.getAll(Store.STORES.characters);
+        if (chars.length < 2) {
+            showToast('请先至少创建2个角色（通过新建聊天）');
+            return;
+        }
+        const charChecks = chars.map(c => `
+            <label style="display:flex;align-items:center;gap:10px;padding:10px 0;font-size:14px;color:var(--text-primary);cursor:pointer;border-bottom:1px solid var(--glass-border-light)">
+                <input type="checkbox" value="${c.id}">
+                <div style="width:32px;height:32px;border-radius:50%;background:var(--glass-bg-heavy);display:flex;align-items:center;justify-content:center;font-size:14px;overflow:hidden;flex-shrink:0;border:1px solid var(--glass-border-light)">${c.avatar ? `<img src="${escapeHtml(c.avatar)}" style="width:100%;height:100%;object-fit:cover">` : (c.name?.[0] || '👤')}</div>
+                <span>${escapeHtml(c.name)}</span>
+            </label>`).join('');
+
+        Phone.showModal({
+            title: '新建群聊',
+            content: `
+                <div class="form-group">
+                    <label class="form-label">群名称</label>
+                    <input class="form-input" id="group-name" placeholder="群聊名称">
+                </div>
+                <div class="form-group" style="margin-bottom:0">
+                    <label class="form-label">选择成员（至少2个）</label>
+                    <div id="group-members" style="max-height:200px;overflow-y:auto">${charChecks}</div>
+                </div>`,
+            actions: [
+                { label: '取消', type: 'secondary' },
+                { label: '创建', type: 'primary', onClick: async () => {
+                    const name = document.getElementById('group-name').value.trim();
+                    const selected = [];
+                    document.querySelectorAll('#group-members input:checked').forEach(cb => selected.push(cb.value));
+                    if (selected.length < 2) { showToast('请至少选择2个角色'); return; }
+                    const chat = {
+                        id: 'chat_' + uid(), type: 'group', name: name || '群聊',
+                        characterIds: selected, messageCount: 0, lastMessage: '',
+                        updatedAt: Date.now(), createdAt: Date.now()
+                    };
+                    await Store.put(Store.STORES.chats, chat);
+                    showToast('群聊已创建');
+                    Router.open('chat', { chatId: chat.id });
+                }}
+            ]
+        });
     }
 
     async function createModelChat() {
@@ -308,8 +336,9 @@ const ChatApp = (() => {
             html += '<div class="sticker-manage-grid">';
             stickers.forEach((s, i) => {
                 html += `<div class="sticker-manage-item" data-sticker-idx="${i}">
-                    <img src="${escapeHtml(s.url)}" alt="${escapeHtml(s.desc)}" onerror="this.style.display='none';this.parentElement.insertAdjacentHTML('afterbegin','<div style=\\'font-size:11px;color:var(--text-tertiary);text-align:center\\'>加载失败</div>')">
-                    <div class="sticker-manage-desc">${escapeHtml(s.desc)}</div></div>`;
+                    <img src="${escapeHtml(s.url)}" alt="${escapeHtml(s.desc)}" onerror="this.style.display='none'">
+                    <div class="sticker-manage-desc">${escapeHtml(s.desc)}</div>
+                </div>`;
             });
             html += '</div>';
         }
@@ -539,7 +568,7 @@ const ChatApp = (() => {
     }
 
     /* ============================================
-       提示词设置（日记+ 总结的提示词可编辑）
+       提示词设置
        ============================================ */
     async function openPromptSettings() {
         const summaryPrompt = await Store.getSetting('prompt_summary',
@@ -547,9 +576,7 @@ const ChatApp = (() => {
         const diaryPrompt = await Store.getSetting('prompt_diary',
             '你可以在回复末尾写日记来记录你对用户的观察和感受，用户看不到这部分内容。格式：[DIARY]日记内容[/DIARY]');
         const responseFormatPrompt = await Store.getSetting('prompt_response_format',
-            `你可以一次回复多条消息，用---MSG_SPLIT--- 分隔。每条消息就是一个独立的聊天气泡。
-如果要引用某条消息，在消息开头加[quote:消息内容的前10个字]
-如果要使用表情包，单独一条消息写[sticker:序号]`);
+            '你可以一次回复多条消息，用---MSG_SPLIT--- 分隔。每条消息就是一个独立的聊天气泡。\n如果要引用某条消息，在消息开头加[quote:消息内容的前10个字]\n如果要使用表情包，单独一条消息写[sticker:序号]');
 
         Phone.showModal({
             title: '提示词设置',
@@ -616,7 +643,8 @@ const ChatApp = (() => {
                     <button class="chat-header-btn" onclick="ChatApp.openChatMenu()" title="菜单">☰</button>
                 </div>
             </div>
-            <div class="chat-messages" id="chat-messages"><div style="display:flex;justify-content:center;padding:40px"><div class="chat-spinner"></div></div>
+            <div class="chat-messages" id="chat-messages">
+                <div style="display:flex;justify-content:center;padding:40px"><div class="chat-spinner"></div></div>
             </div>
             <div id="chat-reply-bar-container"></div>
             <div class="chat-input-area" id="chat-input-area">
@@ -660,7 +688,6 @@ const ChatApp = (() => {
             });
         }
 
-        // Inject custom CSS
         const chat = await Store.get(Store.STORES.chats, chatId);
         if (chat) {
             for (const cid of (chat.characterIds || [])) {
@@ -681,6 +708,8 @@ const ChatApp = (() => {
         currentChatId = null;
         replyTo = null;
         stickerPanelOpen = false;
+        // Use closeAll + reopen to avoid history loop
+        Router.closeAll();
         Router.open('chat');
     }
 
@@ -715,12 +744,13 @@ const ChatApp = (() => {
                 if (msgDate !== lastDate) {
                     html += `<div class="chat-date-divider"><span>${fmtDate(msg.timestamp)}</span></div>`;
                     lastDate = msgDate;
-                    lastRole = '';lastCharId = '';
+                    lastRole = '';
+                    lastCharId = '';
                 }
                 const isUser = msg.role === 'user';
                 const char = msg.characterId ? chars[msg.characterId] : null;
                 const consecutive = msg.role === lastRole && msg.characterId === lastCharId;
-                html += renderMsgBubble(msg, char, isUser, consecutive, msgs);
+                html += renderMsgBubble(msg, char, isUser, consecutive, msgs, chars);
                 lastRole = msg.role;
                 lastCharId = msg.characterId || '';
             });
@@ -733,10 +763,11 @@ const ChatApp = (() => {
         }
     }
 
-    function renderMsgBubble(msg, char, isUser, consecutive, allMsgs) {
+    function renderMsgBubble(msg, char, isUser, consecutive, allMsgs, charsMap) {
         const roleClass = isUser ? 'user' : 'assistant';
         const consClass = consecutive ? ' consecutive' : '';
-        const avatar = isUser ? '👤' : (char?.avatar ? `<img src="${escapeHtml(char.avatar)}" alt="">` : (char?.name?.[0] || '🤖'));
+        const userAvatar = '👤';
+        const avatar = isUser ? userAvatar : (char?.avatar ? `<img src="${escapeHtml(char.avatar)}" alt="">` : (char?.name?.[0] || '🤖'));
         const senderName = isUser ? '' : (char?.name || '助手');
 
         // Quote
@@ -744,7 +775,8 @@ const ChatApp = (() => {
         if (msg.replyToId) {
             const quoted = allMsgs.find(m => m.id === msg.replyToId);
             if (quoted) {
-                const qName = quoted.role === 'user' ? '你' : (char?.name || '助手');
+                const qChar = quoted.characterId && charsMap ? charsMap[quoted.characterId] : null;
+                const qName = quoted.role === 'user' ? '你' : (qChar?.name || '助手');
                 quoteHtml = `<div class="chat-quote" data-msg-id="${quoted.id}">
                     <div class="chat-quote-sender">${escapeHtml(qName)}</div>
                     <div>${escapeHtml(quoted.content?.slice(0, 60) || '')}</div>
@@ -768,7 +800,7 @@ const ChatApp = (() => {
             case 'voice':
                 bubbleClass += ' voice-bubble';
                 bubbleContent = `<div class="chat-voice-content">
-                    <div class="chat-voice-icon">${ICONS.play}</div>
+                    <div class="chat-voice-play"></div>
                     <div class="chat-voice-waves"><div class="chat-voice-wave"></div><div class="chat-voice-wave"></div><div class="chat-voice-wave"></div><div class="chat-voice-wave"></div><div class="chat-voice-wave"></div><div class="chat-voice-wave"></div><div class="chat-voice-wave"></div><div class="chat-voice-wave"></div></div>
                     <span class="chat-voice-duration">${escapeHtml(msg.typeData?.duration || '0:03')}</span>
                 </div>`;
@@ -777,13 +809,12 @@ const ChatApp = (() => {
                 bubbleClass += ' transfer-bubble';
                 bubbleContent = `
                     <div class="chat-transfer-header">
-                        <div class="chat-transfer-icon-wrap">${ICONS.money}</div>
+                        <div class="chat-transfer-icon-wrap"></div>
                         <div class="chat-transfer-info">
                             <div class="chat-transfer-amount">${escapeHtml(msg.typeData?.amount || '¥0')}</div>
                             <div class="chat-transfer-note">${escapeHtml(msg.content || '转账')}</div>
                         </div>
-                    </div>
-                    <div class="chat-transfer-footer">
+                    </div><div class="chat-transfer-footer">
                         <span class="chat-transfer-label">转账</span>
                         <span class="chat-transfer-status">已收款</span>
                     </div>`;
@@ -792,7 +823,7 @@ const ChatApp = (() => {
                 bubbleClass += ' location-bubble';
                 bubbleContent = `
                     <div class="chat-location-map">
-                        <div class="chat-location-pin">${ICONS.pin}</div>
+                        <div class="chat-location-pin"></div>
                     </div>
                     <div class="chat-location-info">
                         <div class="chat-location-text">
@@ -806,7 +837,7 @@ const ChatApp = (() => {
                 bubbleClass += ' gift-bubble';
                 bubbleContent = `
                     <div class="chat-gift-header">
-                        <div class="chat-gift-icon-wrap">${ICONS.gift}</div>
+                        <div class="chat-gift-icon-wrap">🎁</div>
                         <div class="chat-gift-label">${escapeHtml(msg.content || '礼物')}</div>
                     </div>
                     <div class="chat-gift-footer">已拆开</div>`;
@@ -818,7 +849,7 @@ const ChatApp = (() => {
                         <div class="chat-article-title">${escapeHtml(msg.typeData?.title || '文章')}</div>
                         <div class="chat-article-desc">${escapeHtml(msg.content || '')}</div>
                     </div>
-                    <div class="chat-article-footer">${ICONS.article}<span>公众号文章</span></div>`;
+                    <div class="chat-article-footer"><div class="chat-article-icon"></div><span>公众号文章</span></div>`;
                 break;
             default:
                 bubbleContent = formatTextContent(msg.content || '');
@@ -859,7 +890,8 @@ const ChatApp = (() => {
             q.addEventListener('click', () => {
                 const target = container.querySelector(`[data-msg-id="${q.dataset.msgId}"]`);
                 if (target) {
-                    target.scrollIntoView({ behavior: 'smooth', block: 'center' });target.style.background = 'var(--glass-bg-light)';
+                    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    target.style.background = 'var(--glass-bg-light)';
                     setTimeout(() => target.style.background = '', 1000);
                 }
             });
@@ -937,8 +969,7 @@ const ChatApp = (() => {
         input.value = '';
         input.style.height = 'auto';
         clearReply();
-        await loadMessages();
-        showToast('已发送（AI 未回复）');
+        await loadMessages();showToast('已发送（AI 未回复）');
     }
 
     async function sendAndTrigger() {
@@ -1018,12 +1049,8 @@ const ChatApp = (() => {
         } finally {
             abortCtrl = null;
             if (statusEl) {
-                const chars = [];
-                for (const cid of (chat.characterIds || [])) {
-                    const c = await Store.get(Store.STORES.characters, cid);
-                    if (c) chars.push(c);
-                }
-                statusEl.textContent = chat.type === 'group' ? chars.length + ' 位成员' : '在线';
+                const charCount = (chat.characterIds || []).length;
+                statusEl.textContent = chat.type === 'group' ? charCount + ' 位成员' : '在线';
             }
         }
     }
@@ -1077,7 +1104,7 @@ const ChatApp = (() => {
                 stickers.forEach((s, i) => { systemPrompt += `${i}: ${s.desc}\n`; });
             }
 
-            // Diary — AI 可以阅读自己的日记
+            // Diary — AI can read its own diary
             for (const c of chars) {
                 const diaries = await Store.getAllByIndex(Store.STORES.diaries, 'charId', c.id);
                 if (diaries.length > 0) {
@@ -1133,17 +1160,11 @@ const ChatApp = (() => {
 
         // Response format instruction (user-editable)
         const responseFormatPrompt = await Store.getSetting('prompt_response_format',
-            `你可以一次回复多条消息，用---MSG_SPLIT--- 分隔。每条消息就是一个独立的聊天气泡。
-如果要引用某条消息，在消息开头加 [quote:消息内容的前10个字]
-如果要使用表情包，单独一条消息写[sticker:序号]`);
+            '你可以一次回复多条消息，用---MSG_SPLIT--- 分隔。每条消息就是一个独立的聊天气泡。\n如果要引用某条消息，在消息开头加 [quote:消息内容的前10个字]\n如果要使用表情包，单独一条消息写[sticker:序号]');
 
         let formatInstruction = responseFormatPrompt;
         if (chat.type === 'group') {
-            formatInstruction += `\n\n你正在群聊中。请在回复最开头标注角色名，格式: [CHAR:角色名]
-例如:
-[CHAR:小明]你好呀！
----MSG_SPLIT---
-[CHAR:小红]嗨嗨~`;
+            formatInstruction += '\n\n你正在群聊中。请在回复最开头标注角色名，格式: [CHAR:角色名]\n例如:\n[CHAR:小明]你好呀！\n---MSG_SPLIT---\n[CHAR:小红]嗨嗨~';
         }
 
         messages.push({ role: 'system', content: formatInstruction });
@@ -1169,7 +1190,7 @@ const ChatApp = (() => {
             <div class="chat-msg-avatar">${avatar}</div>
             <div class="chat-msg-body">
                 <div class="chat-msg-sender">${escapeHtml(name)}</div>
-                <div class="chat-bubble"><span class="streaming-text"></span><span style="display:inline-block;width:2px;height:14px;background:var(--text-primary);margin-left:2px;animation:blink 1s infinite">​</span></div>
+                <div class="chat-bubble"><span class="streaming-text"></span><span style="display:inline-block;width:2px;height:14px;background:var(--text-primary);margin-left:2px;animation:blink 1s infinite"></span></div>
             </div>`;
         container.appendChild(row);
         scrollToBottom();
@@ -1234,7 +1255,6 @@ const ChatApp = (() => {
 
     /* ---- 处理 AI 回复 ---- */
     async function processAIResponse(fullText, chat, respondChar) {
-        // Extract diary
         let diary = null;
         const diaryMatch = fullText.match(/\[DIARY\]([\s\S]*?)\[\/DIARY\]/);
         if (diaryMatch) {
@@ -1251,7 +1271,6 @@ const ChatApp = (() => {
             let part = parts[i];
             let charId = respondChar?.id || null;
 
-            // Parse character for group chat
             const charMatch = part.match(/^\[CHAR:(.+?)\]/);
             if (charMatch) {
                 const charName = charMatch[1].trim();
@@ -1262,7 +1281,6 @@ const ChatApp = (() => {
                 }
             }
 
-            // Parse quote
             let replyToId = null;
             const quoteMatch = part.match(/^\[quote:(.+?)\]/);
             if (quoteMatch) {
@@ -1272,7 +1290,6 @@ const ChatApp = (() => {
                 if (found) replyToId = found.id;
             }
 
-            // Parse sticker
             let msgType = 'text';
             let typeData = null;
             const stickerMatch = part.match(/^\[sticker:(\d+)\]$/);
@@ -1280,7 +1297,8 @@ const ChatApp = (() => {
                 const idx = parseInt(stickerMatch[1]);
                 if (stickers[idx]) {
                     msgType = 'sticker';
-                    typeData = { url: stickers[idx].url, description: stickers[idx].desc };part = stickers[idx].desc || '表情';
+                    typeData = { url: stickers[idx].url, description: stickers[idx].desc };
+                    part = stickers[idx].desc || '表情';
                 }
             }
 
@@ -1289,18 +1307,17 @@ const ChatApp = (() => {
                 characterId: charId, content: part, type: msgType, typeData,
                 replyToId, timestamp: Date.now() + i, isDeleted: false
             };
-            await Store.put(Store.STORES.messages, msg);}
+            await Store.put(Store.STORES.messages, msg);
+        }
 
-        // Update chat
         const lastPart = parts[parts.length - 1] || '';
         chat.messageCount = (chat.messageCount || 0) + parts.length;
         chat.lastMessage = lastPart.replace(/^\[CHAR:.+?\]/, '').replace(/^\[quote:.+?\]/, '').slice(0, 50);
         chat.updatedAt = Date.now();
         await Store.put(Store.STORES.chats, chat);
 
-        // Save diary
+        // Save diary (append)
         if (diary && respondChar) {
-            // Append to existing diary
             const existing = await Store.getAllByIndex(Store.STORES.diaries, 'charId', respondChar.id);
             const existingDiary = existing[0];
             if (existingDiary) {
@@ -1315,8 +1332,7 @@ const ChatApp = (() => {
             }
         }
 
-        await loadMessages();
-    }
+        await loadMessages();}
 
     /* ---- 总结 ---- */
     async function triggerSummary(chat, activeMsgs, existingSummaries) {
@@ -1344,8 +1360,7 @@ const ChatApp = (() => {
                 id: 'sum_' + uid(), chatId: chat.id, content: result,
                 messageRange: { from: fromIdx, to: toIdx },
                 createdAt: Date.now(), editedAt: null
-            });
-            Logger.info('Summary created', `Messages ${fromIdx}-${toIdx}`);
+            });Logger.info('Summary created', `Messages ${fromIdx}-${toIdx}`);
         } catch (e) {
             Logger.error('Summary failed', e.message);
         }
@@ -1469,21 +1484,24 @@ const ChatApp = (() => {
             chat.lastMessage = `[${type}]`;
             chat.updatedAt = Date.now();
             await Store.put(Store.STORES.chats, chat);
-        }clearReply();
+        }
+        clearReply();
         await loadMessages();showToast('已发送');
     }
 
     /* ---- 表情包面板（聊天内） ---- */
     async function toggleStickerPanel() {
-        stickerPanelOpen = !stickerPanelOpen;
         const inputArea = document.getElementById('chat-input-area');
         if (!inputArea) return;
 
-        // Remove existing panel
         const existing = inputArea.querySelector('.sticker-panel');
-        if (existing) { existing.remove(); stickerPanelOpen = false; return; }
-        if (!stickerPanelOpen) return;
+        if (existing) {
+            existing.remove();
+            stickerPanelOpen = false;
+            return;
+        }
 
+        stickerPanelOpen = true;
         const stickers = await Store.getSetting('sticker_packs', []);
 
         const panel = document.createElement('div');
@@ -1495,12 +1513,12 @@ const ChatApp = (() => {
         </div>`;
 
         if (stickers.length === 0) {
-            panelHtml += `<div class="sticker-panel-grid"><div class="sticker-panel-empty">暂无表情包<br>在＋菜单中管理表情包</div></div>`;
+            panelHtml += '<div class="sticker-panel-grid"><div class="sticker-panel-empty">暂无表情包<br>在＋菜单中管理表情包</div></div>';
         } else {
             panelHtml += '<div class="sticker-panel-grid">';
             stickers.forEach((s, i) => {
                 panelHtml += `<div class="sticker-panel-item" data-sticker-send="${i}">
-                    <img src="${escapeHtml(s.url)}" alt="${escapeHtml(s.desc)}" onerror="this.style.display='none';this.parentElement.insertAdjacentHTML('afterbegin','<div style=\\'font-size:10px;color:var(--text-tertiary);text-align:center\\'>❌</div>')">
+                    <img src="${escapeHtml(s.url)}" alt="${escapeHtml(s.desc)}" onerror="this.style.display='none'">
                 </div>`;
             });
             panelHtml += '</div>';
@@ -1529,8 +1547,84 @@ const ChatApp = (() => {
             { label: 'AI 日记', icon: '📔', onClick: () => openDiaryView() },
             { label: '角色信息', icon: '👤', onClick: () => openCharInfoFromChat() },
             { type: 'separator' },
-            { label: '清空消息', icon: '🗑', danger: true, onClick: () => clearChatMessages() }
+            { label: '删除角色', icon: '🗑', danger: true, onClick: () => confirmDeleteCharFromChat() },
+            { label: '清空消息', icon: '✕', danger: true, onClick: () => clearChatMessages() }
         ]);
+    }
+
+    async function confirmDeleteCharFromChat() {
+        const chat = await Store.get(Store.STORES.chats, currentChatId);
+        if (!chat || !chat.characterIds?.length) {
+            showToast('此会话无角色');
+            return;
+        }
+
+        if (chat.type === 'group') {
+            // For group, let user pick which char to remove
+            const chars = [];
+            for (const cid of chat.characterIds) {
+                const c = await Store.get(Store.STORES.characters, cid);
+                if (c) chars.push(c);
+            }
+            const charList = chars.map(c => `
+                <div class="chat-contact-item" data-del-char="${c.id}" style="cursor:pointer">
+                    <div class="chat-contact-avatar" style="width:36px;height:36px;font-size:16px">${c.avatar ? `<img src="${escapeHtml(c.avatar)}" alt="">` : (c.name?.[0] || '👤')}</div>
+                    <div class="chat-contact-info">
+                        <div class="chat-contact-name">${escapeHtml(c.name)}</div>
+                    </div>
+                </div>`).join('');
+
+            Phone.showModal({
+                title: '选择要删除的角色',
+                content: `<div style="max-height:300px;overflow-y:auto">${charList}</div>`,
+                actions: [{ label: '取消', type: 'secondary' }]
+            });
+
+            setTimeout(() => {
+                document.querySelectorAll('[data-del-char]').forEach(el => {
+                    el.addEventListener('click', () => {
+                        Phone.closeModal();
+                        doDeleteChar(el.dataset.delChar);
+                    });
+                });
+            }, 100);
+        } else {
+            // Single chat — delete the one char
+            const charId = chat.characterIds[0];
+            const char = await Store.get(Store.STORES.characters, charId);
+            Phone.showModal({
+                title: '删除角色',
+                content: `<div style="font-size:14px;color:var(--text-secondary);text-align:center">确定删除角色"${escapeHtml(char?.name || '')}"？此操作不可恢复。</div>`,
+                actions: [
+                    { label: '取消', type: 'secondary' },
+                    { label: '删除', type: 'primary', onClick: () => doDeleteChar(charId) }
+                ]
+            });
+        }
+    }
+
+    async function doDeleteChar(charId) {
+        try {
+            // Remove from current chat
+            const chat = await Store.get(Store.STORES.chats, currentChatId);
+            if (chat) {
+                chat.characterIds = (chat.characterIds || []).filter(id => id !== charId);
+                await Store.put(Store.STORES.chats, chat);
+            }
+
+            // Check if used in other chats
+            const allChats = await Store.getAll(Store.STORES.chats);
+            const usedElsewhere = allChats.some(c => c.id !== currentChatId && c.characterIds?.includes(charId));
+            if (!usedElsewhere) {
+                await Store.del(Store.STORES.characters, charId);
+                const diaries = await Store.getAllByIndex(Store.STORES.diaries, 'charId', charId);
+                for (const d of diaries) await Store.del(Store.STORES.diaries, d.id);
+            }
+
+            showToast('角色已删除');
+        } catch (e) {
+            showToast('删除失败: ' + e.message);
+        }
     }
 
     async function openSummaryView() {
@@ -1574,8 +1668,7 @@ const ChatApp = (() => {
                         sum.content = document.getElementById('sum-edit-content').value;
                         sum.editedAt = Date.now();
                         await Store.put(Store.STORES.summaries, sum);
-                        showToast('总结已保存');
-                        openSummaryView();
+                        showToast('总结已保存');openSummaryView();
                     }}
                 ]
             });
@@ -1655,8 +1748,7 @@ const ChatApp = (() => {
 
         Phone.showModal({
             title: '编辑角色',
-            content: `
-            <div class="char-form">
+            content: `<div class="char-form">
                 <div class="char-avatar-picker">
                     <div class="char-avatar-preview" id="char-avatar-preview">
                         ${char.avatar ? `<img src="${escapeHtml(char.avatar)}" alt="" style="width:100%;height:100%;object-fit:cover">` : '👤'}
@@ -1664,7 +1756,7 @@ const ChatApp = (() => {
                     <div style="flex:1">
                         <div class="form-group" style="margin-bottom:0">
                             <label class="form-label">头像 URL</label>
-                            <input class="form-input" id="char-avatar" value="${escapeHtml(char.avatar)}" placeholder="https://..." oninput="document.getElementById('char-avatar-preview').innerHTML=this.value?'<img src=\\''+this.value+'\\' alt=\\\"\\\" style=\\'width:100%;height:100%;object-fit:cover\\'>':'👤'">
+                            <input class="form-input" id="char-avatar" value="${escapeHtml(char.avatar)}" placeholder="https://...">
                         </div></div>
                 </div>
                 <div class="form-group">
@@ -1706,7 +1798,6 @@ const ChatApp = (() => {
                         char.knowledgeBooks.push(cb.value);
                     });
                     await Store.put(Store.STORES.characters, char);
-                    // Update chat name
                     const chat = await Store.get(Store.STORES.chats, currentChatId);
                     if (chat && chat.type === 'single') {
                         chat.name = char.name;
@@ -1716,6 +1807,22 @@ const ChatApp = (() => {
                 }}
             ]
         });
+
+        // Live avatar preview
+        setTimeout(() => {
+            const avatarInput = document.getElementById('char-avatar');
+            const preview = document.getElementById('char-avatar-preview');
+            if (avatarInput && preview) {
+                avatarInput.addEventListener('input', () => {
+                    const url = avatarInput.value.trim();
+                    if (url) {
+                        preview.innerHTML = `<img src="${escapeHtml(url)}" alt="" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.textContent='👤'">`;
+                    } else {
+                        preview.textContent = '👤';
+                    }
+                });
+            }
+        }, 100);
     }
 
     async function clearChatMessages() {
@@ -1771,3 +1878,4 @@ const ChatApp = (() => {
         editSummary, editDiary, openPromptSettings
     };
 })();
+

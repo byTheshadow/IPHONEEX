@@ -1,7 +1,7 @@
 /* apps/chat/chat.css */
 
 /* ============================================
-   CHAT APP —黑白毛玻璃极简风格 v2
+   CHAT APP —黑白毛玻璃极简风格v3
    ============================================ */
 
 /* ---------- 会话列表页 ---------- */
@@ -102,7 +102,8 @@
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 4px;flex-shrink: 0;
+    gap: 4px;
+    flex-shrink: 0;
 }
 
 .chat-contact-time {
@@ -271,7 +272,8 @@
 }
 
 .chat-msg-row.user {
-    align-self: flex-end;flex-direction: row-reverse;
+    align-self: flex-end;
+    flex-direction: row-reverse;
 }
 
 .chat-msg-row.assistant {
@@ -334,8 +336,7 @@
 .chat-msg-row.assistant .chat-bubble {
     background: var(--glass-bg);
     backdrop-filter: var(--glass-blur-light);
-    color: var(--text-primary);
-    border-top-left-radius: 4px;
+    color: var(--text-primary);border-top-left-radius: 4px;
 }
 
 .chat-msg-row.user .chat-bubble {
@@ -398,7 +399,7 @@
 }
 
 /* ============================================
-   特殊消息卡片 — 高度拟真设计
+   特殊消息卡片 — 高度拟真设计（纯 CSS 图标）
    ============================================ */
 
 /* --- 表情包 --- */
@@ -454,7 +455,7 @@
     gap: 10px;
 }
 
-.chat-voice-icon {
+.chat-voice-play {
     width: 28px;
     height: 28px;
     border-radius: 50%;
@@ -463,15 +464,22 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    position: relative;
 }
 
-[data-theme="dark"] .chat-voice-icon { color: #000; }
-[data-theme="light"] .chat-voice-icon { color: #fff; }
+[data-theme="dark"] .chat-voice-play { color: #000; }
+[data-theme="light"] .chat-voice-play { color: #fff; }
 
-.chat-voice-icon svg {
-    width: 14px;
-    height: 14px;
-    fill: currentColor;
+/* CSS 三角形播放图标 */
+.chat-voice-play::after {
+    content: '';
+    display: block;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 5px 0 5px 9px;
+    border-color: transparent transparent transparent currentColor;
+    margin-left: 2px;
 }
 
 .chat-voice-waves {
@@ -499,22 +507,6 @@
 .chat-voice-wave:nth-child(6) { height: 14px; }
 .chat-voice-wave:nth-child(7) { height: 6px; }
 .chat-voice-wave:nth-child(8) { height: 11px; }
-
-.chat-voice-playing .chat-voice-wave {
-    animation: voiceWave 0.6s ease-in-out infinite alternate;
-}
-
-.chat-voice-wave:nth-child(2) { animation-delay: 0.08s; }
-.chat-voice-wave:nth-child(3) { animation-delay: 0.16s; }
-.chat-voice-wave:nth-child(4) { animation-delay: 0.24s; }
-.chat-voice-wave:nth-child(5) { animation-delay: 0.32s; }
-.chat-voice-wave:nth-child(6) { animation-delay: 0.40s; }
-.chat-voice-wave:nth-child(7) { animation-delay: 0.48s; }
-.chat-voice-wave:nth-child(8) { animation-delay: 0.56s; }
-
-@keyframes voiceWave {
-    to { height: 4px; }
-}
 
 .chat-voice-duration {
     font-size: 12px;
@@ -551,15 +543,17 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    position: relative;
 }
 
 [data-theme="dark"] .chat-transfer-icon-wrap { color: #000; }
 [data-theme="light"] .chat-transfer-icon-wrap { color: #fff; }
 
-.chat-transfer-icon-wrap svg {
-    width: 22px;
-    height: 22px;
-    fill: currentColor;
+/* CSS 货币符号 */
+.chat-transfer-icon-wrap::after {
+    content: '¥';
+    font-size: 20px;
+    font-weight: 700;
 }
 
 .chat-transfer-info {
@@ -633,18 +627,36 @@
     opacity: 0.5;
 }
 
+/* CSS 地图图钉 */
 .chat-location-pin {
     position: relative;
     z-index: 1;
-    width: 32px;
-    height: 32px;
+    width: 24px;
+    height: 34px;
 }
 
-.chat-location-pin svg {
-    width: 100%;
-    height: 100%;
-    fill: var(--danger);
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+.chat-location-pin::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%50% 50% 0;
+    background: var(--danger);
+    transform: rotate(-45deg);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.chat-location-pin::after {
+    content: '';
+    position: absolute;
+    top: 5px;
+    left: 7px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--glass-bg);
 }
 
 .chat-location-info {
@@ -713,18 +725,12 @@
     margin: 0 auto 10px;
     border-radius: 50%;
     background: var(--glass-bg-light);
-    border: 2px solid var(--glass-border);
-    display: flex;
+    border: 2px solid var(--glass-border);display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
     z-index: 1;
-}
-
-.chat-gift-icon-wrap svg {
-    width: 28px;
-    height: 28px;
-    fill: var(--text-primary);
+    font-size: 26px;
 }
 
 .chat-gift-label {
@@ -786,10 +792,24 @@
     color: var(--text-tertiary);
 }
 
-.chat-article-footer svg {
+/*文章图标用 CSS */
+.chat-article-icon {
     width: 12px;
     height: 12px;
-    fill: var(--text-tertiary);
+    border: 1.5px solid var(--text-tertiary);
+    border-radius: 2px;
+    position: relative;
+}
+
+.chat-article-icon::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    right: 2px;
+    height: 1px;
+    background: var(--text-tertiary);
+    box-shadow: 0 3px 0 var(--text-tertiary);
 }
 
 /* ---------- 正在输入指示器 ---------- */
@@ -808,7 +828,7 @@
     background: var(--glass-bg);
     backdrop-filter: var(--glass-blur-light);
     border: 1px solid var(--glass-border-light);
-    border-radius: 18px;
+    border-radius:18px;
     border-top-left-radius: 4px;
 }
 
@@ -1361,3 +1381,10 @@
     color: var(--text-tertiary);
     margin-top: 4px;
 }
+
+/* ---------- 光标闪烁 ---------- */
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
