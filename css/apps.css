@@ -137,21 +137,24 @@
 .settings-item__label {
   font-size: var(--font-size-md);
   color: var(--text-on-app);
-  flex-shrink: 0;
+  flex-shrink: 0;          /* label 不缩小 */
   white-space: nowrap;
 }
+
 [data-theme="dark"] .settings-item__label { color: var(--text-primary); }
 
 .settings-item__value {
   font-size: var(--font-size-sm);
   color: var(--text-on-app-sub);
   text-align: right;
+  /* 不设 max-width，让 flex 自然分配 */
+  flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 55%;          /* 防止长文本把 label 挤出去 */
 }
+
 [data-theme="dark"] .settings-item__value { color: var(--text-secondary); }
 
 .settings-item__right {
