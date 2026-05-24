@@ -1,87 +1,68 @@
 // apps/chat/chat.js
 const ChatApp = (() => {
-    /*======== 工具函数 ======== */
+    /*======== 工具 ======== */
     function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
     function escapeHtml(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
-    function fmtTime(ts) { const d = new Date(ts); return d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }); }
+    function fmtTime(ts) { return new Date(ts).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }); }
     function fmtDate(ts) {
         const d = new Date(ts), now = new Date();
         if (d.toDateString() === now.toDateString()) return '今天';
-        const y = now.getTime() - 86400000;
-        if (d.toDateString() === new Date(y).toDateString()) return '昨天';
+        if (d.toDateString() === new Date(now.getTime() - 86400000).toDateString()) return '昨天';
         return `${d.getMonth() + 1}/${d.getDate()}`;
     }
 
     /* ======== 状态 ======== */
     let currentChatId = null;
-    let currentTab = 'chats'; // chats | contacts | stickers | knowledge
-    let replyTo = null;       // 引用的消息对象
+    let replyTo = null;
     let abortCtrl = null;
     let stickerPanelOpen = false;
 
+    /* ======== SVG 图标（不用emoji） ======== */
+    const ICONS = {
+        play: '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>',
+        money: '<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L10 14v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 54.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>',
+        pin: '<svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>',
+        gift: '<svg viewBox="0 0 24 24"><path d="M20 6h-2.18c.11-.31.18-.65.18-1 0-1.66-1.34-3-3-3-1.05 0-1.96.54-2.5 1.35l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM9 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm11 15H4v-2h16v2zm0-5H4V8h5.08L7 10.838.62 12 118.76l1-1.361 1.36L15.38 12 17 10.83 14.92 8H20v6z"/></svg>',
+        article: '<svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>'
+    };
+
     /* ======== 主入口 ======== */
     async function render(params) {
-        if (params && params.chatId) {
-            return await renderChatView(params.chatId);
-        }
+        if (params && params.chatId) return await renderChatView(params.chatId);
         return await renderList();
     }
 
     async function init(params) {
-        if (params && params.chatId) {
-            await initChatView(params.chatId);
-        } else {
-            await initList();
-        }
+        if (params && params.chatId) await initChatView(params.chatId);
+        else await initList();
     }
 
-    /* ============================================联系人/会话列表
+    /* ============================================会话列表
        ============================================ */
     async function renderList() {
         return `<div class="chat-list-container">
             <div class="app-header">
                 <button class="app-header-btn app-back-btn" onclick="Router.close()">返回</button>
-                <span class="app-header-title">聊天</span><span style="width:60px"></span>
-            </div>
-            <div class="chat-tabs">
-                <button class="chat-tab active" data-tab="chats">会话</button>
-                <button class="chat-tab" data-tab="contacts">角色</button>
-                <button class="chat-tab" data-tab="stickers">表情</button>
-                <button class="chat-tab" data-tab="knowledge">知识</button>
+                <span class="app-header-title">聊天</span>
+                <span style="width:60px"></span>
             </div>
             <div class="chat-search-bar">
-                <input class="chat-search-input" placeholder="搜索..." id="chat-search"></div>
+                <input class="chat-search-input" placeholder="搜索会话..." id="chat-search"></div>
             <div class="chat-contact-list" id="chat-list-body">
-                <div class="chat-loading-overlay"><div class="chat-spinner"></div></div>
+                <div style="display:flex;justify-content:center;padding:40px"><div class="chat-spinner"></div></div>
             </div>
             <button class="chat-fab" id="chat-fab" title="新建">＋</button>
         </div>`;
     }
 
     async function initList() {
-        // Tab switching
-        document.querySelectorAll('.chat-tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                document.querySelectorAll('.chat-tab').forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                currentTab = tab.dataset.tab;
-                refreshListBody();
-            });
-        });
-
-        // Search
         const searchInput = document.getElementById('chat-search');
         let searchTimer;
         searchInput.addEventListener('input', () => {
             clearTimeout(searchTimer);
             searchTimer = setTimeout(() => refreshListBody(searchInput.value), 200);
         });
-
-        // FAB
-        document.getElementById('chat-fab').addEventListener('click', () => {
-            showFabMenu();
-        });
-
+        document.getElementById('chat-fab').addEventListener('click', () => showFabMenu());
         await refreshListBody();
     }
 
@@ -89,18 +70,13 @@ const ChatApp = (() => {
         const body = document.getElementById('chat-list-body');
         if (!body) return;
         body.innerHTML = '<div style="display:flex;justify-content:center;padding:40px"><div class="chat-spinner"></div></div>';
-
         try {
-            if (currentTab === 'chats') await renderChatsList(body, search);
-            else if (currentTab === 'contacts') await renderContactsList(body, search);
-            else if (currentTab === 'stickers') await renderStickersList(body, search);
-            else if (currentTab === 'knowledge') await renderKnowledgeList(body, search);
+            await renderChatsList(body, search);
         } catch (e) {
             body.innerHTML = `<div class="chat-empty-state"><div class="chat-empty-icon">⚠️</div><div class="chat-empty-text">加载失败: ${escapeHtml(e.message)}</div></div>`;
         }
     }
 
-    /* ---- 会话列表 ---- */
     async function renderChatsList(container, search) {
         const chats = await Store.getAll(Store.STORES.chats);
         const chars = await Store.getAll(Store.STORES.characters);
@@ -114,7 +90,7 @@ const ChatApp = (() => {
         }
 
         if (filtered.length === 0) {
-            container.innerHTML = `<div class="chat-empty-state"><div class="chat-empty-icon">💬</div><div class="chat-empty-text">暂无会话，点击 ＋ 创建</div></div>`;
+            container.innerHTML = `<div class="chat-empty-state"><div class="chat-empty-icon">💬</div><div class="chat-empty-text">暂无会话，点击 ＋ 新建聊天</div></div>`;
             return;
         }
 
@@ -137,16 +113,11 @@ const ChatApp = (() => {
             </div>`;
         }).join('');
 
-        // Bind click & long press
         container.querySelectorAll('.chat-contact-item').forEach(el => {
-            el.addEventListener('click', () => {
-                Router.open('chat', { chatId: el.dataset.chatId });
-            });
+            el.addEventListener('click', () => Router.open('chat', { chatId: el.dataset.chatId }));
             let pressTimer;
             el.addEventListener('contextmenu', e => { e.preventDefault(); showChatContextMenu(e, el.dataset.chatId); });
-            el.addEventListener('pointerdown', e => {
-                pressTimer = setTimeout(() => showChatContextMenu(e, el.dataset.chatId), 500);
-            });
+            el.addEventListener('pointerdown', e => { pressTimer = setTimeout(() => showChatContextMenu(e, el.dataset.chatId), 500); });
             el.addEventListener('pointerup', () => clearTimeout(pressTimer));
             el.addEventListener('pointermove', () => clearTimeout(pressTimer));
         });
@@ -154,13 +125,15 @@ const ChatApp = (() => {
 
     function showChatContextMenu(e, chatId) {
         const phoneRect = document.getElementById('phone-container').getBoundingClientRect();
-        const x = (e.clientX || e.pageX) - phoneRect.left;
-        const y = (e.clientY || e.pageY) - phoneRect.top;
-        Phone.showContextMenu(x, y, [
-            { label: '打开', icon: '↗', onClick: () => Router.open('chat', { chatId }) },
-            { type: 'separator' },
-            { label: '删除会话', icon: '🗑', danger: true, onClick: () => confirmDeleteChat(chatId) }
-        ]);
+        Phone.showContextMenu(
+            (e.clientX || e.pageX) - phoneRect.left,
+            (e.clientY || e.pageY) - phoneRect.top,
+            [
+                { label: '打开', icon: '↗', onClick: () => Router.open('chat', { chatId }) },
+                { type: 'separator' },
+                { label: '删除会话', icon: '🗑', danger: true, onClick: () => confirmDeleteChat(chatId) }
+            ]
+        );
     }
 
     async function confirmDeleteChat(chatId) {
@@ -170,159 +143,205 @@ const ChatApp = (() => {
             actions: [
                 { label: '取消', type: 'secondary' },
                 { label: '删除', type: 'primary', onClick: async () => {
+                    showToast('正在删除...');
                     try {
-                        // Delete messages
                         const msgs = await Store.getAllByIndex(Store.STORES.messages, 'chatId', chatId);
                         for (const m of msgs) await Store.del(Store.STORES.messages, m.id);
-                        // Delete summaries
                         const sums = await Store.getAllByIndex(Store.STORES.summaries, 'chatId', chatId);
                         for (const s of sums) await Store.del(Store.STORES.summaries, s.id);
-                        // Delete chat
                         await Store.del(Store.STORES.chats, chatId);
                         showToast('会话已删除');
                         await refreshListBody();
-                    } catch (e) {
-                        showToast('删除失败: ' + e.message);
-                    }
+                    } catch (e) { showToast('删除失败: ' + e.message); }
                 }}
             ]
         });
     }
 
-    /* ---- 角色列表 ---- */
-    async function renderContactsList(container, search) {
-        const chars = await Store.getAll(Store.STORES.characters);
-        let filtered = chars.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-        if (search) {
-            const q = search.toLowerCase();
-            filtered = filtered.filter(c => c.name?.toLowerCase().includes(q) || c.persona?.toLowerCase().includes(q));
-        }
-
-        if (filtered.length === 0) {
-            container.innerHTML = `<div class="chat-empty-state"><div class="chat-empty-icon">👤</div><div class="chat-empty-text">暂无角色，点击 ＋ 创建</div></div>`;
-            return;
-        }
-
-        container.innerHTML = filtered.map(c => `
-            <div class="chat-contact-item" data-char-id="${c.id}">
-                <div class="chat-contact-avatar">${c.avatar ? `<img src="${escapeHtml(c.avatar)}" alt="">` : (c.name?.[0] || '👤')}</div>
-                <div class="chat-contact-info">
-                    <div class="chat-contact-name">${escapeHtml(c.name)}</div>
-                    <div class="chat-contact-preview">${escapeHtml(c.persona?.slice(0, 50) || '无人设描述')}</div>
-                </div>
-                <div class="chat-contact-meta">
-                    <span style="color:var(--text-tertiary);font-size:18px">›</span>
-                </div>
-            </div>`).join('');
-
-        container.querySelectorAll('.chat-contact-item').forEach(el => {
-            el.addEventListener('click', () => openCharEditor(el.dataset.charId));let pressTimer;
-            el.addEventListener('contextmenu', e => { e.preventDefault(); showCharContextMenu(e, el.dataset.charId); });
-            el.addEventListener('pointerdown', e => {
-                pressTimer = setTimeout(() => showCharContextMenu(e, el.dataset.charId), 500);
-            });
-            el.addEventListener('pointerup', () => clearTimeout(pressTimer));
-            el.addEventListener('pointermove', () => clearTimeout(pressTimer));
-        });
-    }
-
-    function showCharContextMenu(e, charId) {
+    /* ---- FAB 菜单 ---- */
+    function showFabMenu() {
+        const fab = document.getElementById('chat-fab');
+        const rect = fab.getBoundingClientRect();
         const phoneRect = document.getElementById('phone-container').getBoundingClientRect();
-        const x = (e.clientX || e.pageX) - phoneRect.left;
-        const y = (e.clientY || e.pageY) - phoneRect.top;
-        Phone.showContextMenu(x, y, [
-            { label: '编辑', icon: '✎', onClick: () => openCharEditor(charId) },
-            { label: '发起聊天', icon: '💬', onClick: () => startChatWith(charId) },
+        Phone.showContextMenu(rect.left - phoneRect.left, rect.top - phoneRect.top - 10, [
+            { label: '新建聊天', icon: '💬', onClick: () => createNewChat('single') },
+            { label: '新建群聊', icon: '👥', onClick: () => createNewChat('group') },
+            { label: '模型本体对话', icon: '🤖', onClick: () => createModelChat() },
             { type: 'separator' },
-            { label: '导出JSON', icon: '📤', onClick: () => exportChar(charId) },
-            { label: '删除', icon: '🗑', danger: true, onClick: () => confirmDeleteChar(charId) }
+            { label: '管理表情包', icon: '🎨', onClick: () => openStickerManager() },
+            { label: '管理知识书', icon: '📖', onClick: () => openKnowledgeManager() },
+            { label: '提示词设置', icon: '⚙', onClick: () => openPromptSettings() },
         ]);
     }
 
-    async function confirmDeleteChar(charId) {
+    /* ============================================
+       创建会话 — 新建聊天 = 新建角色 + 直接进入
+       ============================================ */
+    async function createNewChat(type) {
+        if (type === 'single') {
+            // 直接弹出角色创建表单，创建完直接进入聊天
+            openCharCreatorForChat();
+        } else if (type === 'group') {
+            const chars = await Store.getAll(Store.STORES.characters);
+            if (chars.length < 2) {
+                showToast('请先至少创建2个角色（通过新建聊天）');
+                return;
+            }
+            const charChecks = chars.map(c => `
+                <label style="display:flex;align-items:center;gap:10px;padding:10px 0;font-size:14px;color:var(--text-primary);cursor:pointer;border-bottom:1px solid var(--glass-border-light)">
+                    <input type="checkbox" value="${c.id}">
+                    <div style="width:32px;height:32px;border-radius:50%;background:var(--glass-bg-heavy);display:flex;align-items:center;justify-content:center;font-size:14px;overflow:hidden;flex-shrink:0;border:1px solid var(--glass-border-light)">${c.avatar ? `<img src="${escapeHtml(c.avatar)}" style="width:100%;height:100%;object-fit:cover">` : (c.name?.[0] || '👤')}</div>
+                    <span>${escapeHtml(c.name)}</span>
+                </label>`).join('');Phone.showModal({
+                title: '新建群聊',
+                content: `
+                    <div class="form-group">
+                        <label class="form-label">群名称</label>
+                        <input class="form-input" id="group-name" placeholder="群聊名称">
+                    </div>
+                    <div class="form-group" style="margin-bottom:0">
+                        <label class="form-label">选择成员（至少2个）</label>
+                        <div id="group-members" style="max-height:200px;overflow-y:auto">${charChecks}</div>
+                    </div>`,
+                actions: [
+                    { label: '取消', type: 'secondary' },
+                    { label: '创建', type: 'primary', onClick: async () => {
+                        const name = document.getElementById('group-name').value.trim();
+                        const selected = [];
+                        document.querySelectorAll('#group-members input:checked').forEach(cb => selected.push(cb.value));
+                        if (selected.length < 2) { showToast('请至少选择2个角色'); return; }
+                        const chat = {
+                            id: 'chat_' + uid(), type: 'group', name: name || '群聊',
+                            characterIds: selected, messageCount: 0, lastMessage: '',
+                            updatedAt: Date.now(), createdAt: Date.now()
+                        };
+                        await Store.put(Store.STORES.chats, chat);
+                        showToast('群聊已创建');
+                        Router.open('chat', { chatId: chat.id });
+                    }}
+                ]
+            });
+        }
+    }
+
+    function openCharCreatorForChat() {
         Phone.showModal({
-            title: '删除角色',
-            content: '<div style="font-size:14px;color:var(--text-secondary);text-align:center">确定删除此角色卡？</div>',
+            title: '新建聊天',
+            content: `<div class="char-form">
+                <div class="char-avatar-picker">
+                    <div class="char-avatar-preview" id="char-avatar-preview">👤</div>
+                    <div style="flex:1">
+                        <div class="form-group" style="margin-bottom:0">
+                            <label class="form-label">头像 URL</label>
+                            <input class="form-input" id="char-avatar" placeholder="https://..." oninput="document.getElementById('char-avatar-preview').innerHTML=this.value?'<img src=\\''+this.value+'\\' alt=\\\"\\\" style=\\'width:100%;height:100%;object-fit:cover\\'>':'👤'">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">角色名称</label>
+                    <input class="form-input" id="char-name" placeholder="角色名称">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">人设描述</label>
+                    <textarea class="form-textarea" id="char-persona" rows="4" placeholder="描述角色的性格、背景、说话方式..."></textarea>
+                </div>
+                <div class="form-group" style="margin-bottom:0">
+                    <label class="form-label">角色专属提示词（可选）</label>
+                    <textarea class="form-textarea" id="char-prompt" rows="2" placeholder="额外的系统指令..."></textarea>
+                </div>
+            </div>`,
             actions: [
                 { label: '取消', type: 'secondary' },
-                { label: '删除', type: 'primary', onClick: async () => {
-                    await Store.del(Store.STORES.characters, charId);
-                    showToast('角色已删除');
-                    await refreshListBody();
+                { label: '创建并开始聊天', type: 'primary', onClick: async () => {
+                    const name = document.getElementById('char-name').value.trim();
+                    if (!name) { showToast('请输入角色名称'); return; }
+                    showToast('正在创建...');
+                    const char = {
+                        id: 'char_' + uid(), name,
+                        avatar: document.getElementById('char-avatar').value.trim(),
+                        persona: document.getElementById('char-persona').value.trim(),
+                        globalPrompt: document.getElementById('char-prompt').value.trim(),
+                        knowledgeBooks: [], customCSS: '',
+                        socialProfile: { bio: '' }, createdAt: Date.now()
+                    };
+                    await Store.put(Store.STORES.characters, char);
+                    const chat = {
+                        id: 'chat_' + uid(), type: 'single', name: char.name,
+                        characterIds: [char.id], messageCount: 0, lastMessage: '',
+                        updatedAt: Date.now(), createdAt: Date.now()
+                    };
+                    await Store.put(Store.STORES.chats, chat);
+                    showToast('聊天已创建');
+                    Router.open('chat', { chatId: chat.id });
                 }}
             ]
         });
     }
 
-    async function exportChar(charId) {
-        const c = await Store.get(Store.STORES.characters, charId);
-        if (!c) return;
-        const blob = new Blob([JSON.stringify(c, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = `${c.name ||'character'}.json`; a.click();
-        URL.revokeObjectURL(url);
-        showToast('已导出');
+    async function createModelChat() {
+        const chat = {
+            id: 'chat_' + uid(), type: 'model', name: '模型本体',
+            characterIds: [], messageCount: 0, lastMessage: '',
+            updatedAt: Date.now(), createdAt: Date.now()
+        };
+        await Store.put(Store.STORES.chats, chat);
+        Router.open('chat', { chatId: chat.id });
     }
 
-    /* ---- 表情包列表 ---- */
-    async function renderStickersList(container, search) {
+    /* ============================================
+       表情包管理
+       ============================================ */
+    async function openStickerManager() {
         const stickers = await Store.getSetting('sticker_packs', []);
-        let filtered = stickers;
-        if (search) {
-            const q = search.toLowerCase();
-            filtered = stickers.filter(s => s.desc?.toLowerCase().includes(q));
-        }
+        const appContent = document.getElementById('app-content');
+        let html = `<div class="chat-panel-page">
+            <div class="app-header">
+                <button class="app-header-btn app-back-btn" onclick="ChatApp.backToList()">返回</button>
+                <span class="app-header-title">表情包管理</span>
+                <button class="app-header-btn" onclick="ChatApp.addSticker()">＋</button>
+            </div>
+            <div class="chat-panel-body" id="sticker-manage-body">`;
 
-        let html = `<div style="padding:0 4px 12px;display:flex;gap:8px">
-            <button class="modal-btn modal-btn-primary" style="flex:1;font-size:13px;padding:8px" onclick="ChatApp.addSticker()">添加表情</button>
-        </div>`;
-
-        if (filtered.length === 0) {
-            html += `<div class="chat-empty-state"><div class="chat-empty-icon">🎨</div><div class="chat-empty-text">暂无表情包</div></div>`;
+        if (stickers.length === 0) {
+            html += `<div class="chat-empty-state"><div class="chat-empty-icon">🎨</div><div class="chat-empty-text">暂无表情包，点击 ＋ 添加</div></div>`;
         } else {
-            html += '<div class="sticker-grid">';
-            filtered.forEach((s, i) => {
-                html += `<div class="sticker-item" data-sticker-idx="${i}">
-                    <img src="${escapeHtml(s.url)}" alt="${escapeHtml(s.desc)}" onerror="this.parentElement.innerHTML='<div style=\\'padding:20px;text-align:center;font-size:11px;color:var(--text-tertiary)\\'>加载失败</div>'">
-                    <div class="sticker-item-desc">${escapeHtml(s.desc)}</div>
-                </div>`;
+            html += '<div class="sticker-manage-grid">';
+            stickers.forEach((s, i) => {
+                html += `<div class="sticker-manage-item" data-sticker-idx="${i}">
+                    <img src="${escapeHtml(s.url)}" alt="${escapeHtml(s.desc)}" onerror="this.style.display='none';this.parentElement.insertAdjacentHTML('afterbegin','<div style=\\'font-size:11px;color:var(--text-tertiary);text-align:center\\'>加载失败</div>')">
+                    <div class="sticker-manage-desc">${escapeHtml(s.desc)}</div></div>`;
             });
             html += '</div>';
         }
+        html += '</div></div>';
+        appContent.innerHTML = html;
 
-        container.innerHTML = html;
-
-        container.querySelectorAll('.sticker-item').forEach(el => {
+        document.querySelectorAll('.sticker-manage-item').forEach(el => {
             let pressTimer;
-            el.addEventListener('contextmenu', e => {
-                e.preventDefault();
-                showStickerContextMenu(e, parseInt(el.dataset.stickerIdx));
-            });
-            el.addEventListener('pointerdown', e => {
-                pressTimer = setTimeout(() => showStickerContextMenu(e, parseInt(el.dataset.stickerIdx)), 500);
-            });
+            el.addEventListener('contextmenu', e => { e.preventDefault(); showStickerContextMenu(e, parseInt(el.dataset.stickerIdx)); });
+            el.addEventListener('pointerdown', e => { pressTimer = setTimeout(() => showStickerContextMenu(e, parseInt(el.dataset.stickerIdx)), 500); });
             el.addEventListener('pointerup', () => clearTimeout(pressTimer));
             el.addEventListener('pointermove', () => clearTimeout(pressTimer));
+            el.addEventListener('click', () => editSticker(parseInt(el.dataset.stickerIdx)));
         });
     }
 
     function showStickerContextMenu(e, idx) {
         const phoneRect = document.getElementById('phone-container').getBoundingClientRect();
-        const x = (e.clientX || e.pageX) - phoneRect.left;
-        const y = (e.clientY || e.pageY) - phoneRect.top;
-        Phone.showContextMenu(x, y, [
-            { label: '编辑', icon: '✎', onClick: () => editSticker(idx) },
-            { label: '删除', icon: '🗑', danger: true, onClick: () => deleteSticker(idx) }
-        ]);
-    }
-
-    async function deleteSticker(idx) {
-        const stickers = await Store.getSetting('sticker_packs', []);
-        stickers.splice(idx, 1);
-        await Store.setSetting('sticker_packs', stickers);
-        showToast('已删除');
-        await refreshListBody();
+        Phone.showContextMenu(
+            (e.clientX || e.pageX) - phoneRect.left,
+            (e.clientY || e.pageY) - phoneRect.top,
+            [
+                { label: '编辑', icon: '✎', onClick: () => editSticker(idx) },
+                { label: '删除', icon: '🗑', danger: true, onClick: async () => {
+                    const stickers = await Store.getSetting('sticker_packs', []);
+                    stickers.splice(idx, 1);
+                    await Store.setSetting('sticker_packs', stickers);
+                    showToast('已删除');
+                    openStickerManager();
+                }}
+            ]
+        );
     }
 
     async function editSticker(idx) {
@@ -337,7 +356,7 @@ const ChatApp = (() => {
                     <input class="form-input" id="sticker-edit-url" value="${escapeHtml(s.url)}">
                 </div>
                 <div class="form-group" style="margin-bottom:0">
-                    <label class="form-label">描述（AI 用来理解表情含义）</label>
+                    <label class="form-label">描述（AI用来理解表情含义）</label>
                     <input class="form-input" id="sticker-edit-desc" value="${escapeHtml(s.desc)}" placeholder="例：开心的猫猫表情">
                 </div>`,
             actions: [
@@ -349,37 +368,65 @@ const ChatApp = (() => {
                     };
                     await Store.setSetting('sticker_packs', stickers);
                     showToast('已保存');
-                    await refreshListBody();
+                    openStickerManager();
                 }}
             ]
         });
     }
 
-    /* ---- 知识书列表 ---- */
-    async function renderKnowledgeList(container, search) {
+    function addSticker() {
+        Phone.showModal({
+            title: '添加表情包',
+            content: `
+                <div class="form-group">
+                    <label class="form-label">图片 URL</label>
+                    <input class="form-input" id="sticker-new-url" placeholder="https://...">
+                </div>
+                <div class="form-group" style="margin-bottom:0">
+                    <label class="form-label">描述（AI 用来理解表情含义）</label>
+                    <input class="form-input" id="sticker-new-desc" placeholder="例：开心的猫猫表情">
+                </div>`,
+            actions: [
+                { label: '取消', type: 'secondary' },
+                { label: '添加', type: 'primary', onClick: async () => {
+                    const url = document.getElementById('sticker-new-url').value.trim();
+                    const desc = document.getElementById('sticker-new-desc').value.trim();
+                    if (!url) { showToast('请输入图片 URL'); return; }
+                    if (!desc) { showToast('请输入描述'); return; }
+                    const stickers = await Store.getSetting('sticker_packs', []);
+                    stickers.push({ url, desc });
+                    await Store.setSetting('sticker_packs', stickers);
+                    showToast('表情已添加');
+                    openStickerManager();
+                }}
+            ]
+        });
+    }
+
+    /* ============================================
+       知识书管理
+       ============================================ */
+    async function openKnowledgeManager() {
         const books = await Store.getAll(Store.STORES.knowledgeBooks);
-        let filtered = books.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-        if (search) {
-            const q = search.toLowerCase();
-            filtered = filtered.filter(b => b.name?.toLowerCase().includes(q));
-        }
+        const appContent = document.getElementById('app-content');
+        let html = `<div class="chat-panel-page">
+            <div class="app-header">
+                <button class="app-header-btn app-back-btn" onclick="ChatApp.backToList()">返回</button>
+                <span class="app-header-title">知识书</span>
+                <button class="app-header-btn" onclick="ChatApp.createKnowledgeBook()">＋</button>
+            </div>
+            <div class="chat-panel-body">`;
 
-        let html = `<div style="padding:0 4px 12px;display:flex;gap:8px">
-            <button class="modal-btn modal-btn-primary" style="flex:1;font-size:13px;padding:8px" onclick="ChatApp.createKnowledgeBook()">新建知识书</button>
-        </div>`;
-
-        if (filtered.length === 0) {
-            html += `<div class="chat-empty-state"><div class="chat-empty-icon">📖</div><div class="chat-empty-text">暂无知识书</div></div>`;
+        if (books.length === 0) {
+            html += `<div class="chat-empty-state"><div class="chat-empty-icon">📖</div><div class="chat-empty-text">暂无知识书，点击 ＋ 创建</div></div>`;
         } else {
-            filtered.forEach(b => {
-                const entryCount = b.entries?.length || 0;
-                const scopeLabel = b.scope === 'global' ? '🌐 全局' : '👤 角色绑定';
-                html += `
-                <div class="chat-contact-item" data-kb-id="${b.id}">
-                    <div class="chat-contact-avatar">📖</div>
+            books.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+            books.forEach(b => {
+                html += `<div class="chat-contact-item" data-kb-id="${b.id}">
+                    <div class="chat-contact-avatar" style="font-size:20px">📖</div>
                     <div class="chat-contact-info">
                         <div class="chat-contact-name">${escapeHtml(b.name)}</div>
-                        <div class="chat-contact-preview">${scopeLabel} · ${entryCount} 条目</div>
+                        <div class="chat-contact-preview">${b.entries?.length || 0} 条目</div>
                     </div>
                     <div class="chat-contact-meta">
                         <span style="color:var(--text-tertiary);font-size:18px">›</span>
@@ -387,194 +434,32 @@ const ChatApp = (() => {
                 </div>`;
             });
         }
+        html += '</div></div>';
+        appContent.innerHTML = html;
 
-        container.innerHTML = html;
-
-        container.querySelectorAll('[data-kb-id]').forEach(el => {
+        document.querySelectorAll('[data-kb-id]').forEach(el => {
             el.addEventListener('click', () => openKnowledgeEditor(el.dataset.kbId));
-            let pressTimer;
-            el.addEventListener('contextmenu', e => {
-                e.preventDefault();
-                showKBContextMenu(e, el.dataset.kbId);
-            });
-            el.addEventListener('pointerdown', e => {
-                pressTimer = setTimeout(() => showKBContextMenu(e, el.dataset.kbId), 500);
-            });
-            el.addEventListener('pointerup', () => clearTimeout(pressTimer));
-            el.addEventListener('pointermove', () => clearTimeout(pressTimer));
         });
     }
 
-    function showKBContextMenu(e, kbId) {
-        const phoneRect = document.getElementById('phone-container').getBoundingClientRect();
-        const x = (e.clientX || e.pageX) - phoneRect.left;
-        const y = (e.clientY || e.pageY) - phoneRect.top;
-        Phone.showContextMenu(x, y, [
-            { label: '编辑', icon: '✎', onClick: () => openKnowledgeEditor(kbId) },
-            { type: 'separator' },
-            { label: '删除', icon: '🗑', danger: true, onClick: async () => {
-                await Store.del(Store.STORES.knowledgeBooks, kbId);
-                showToast('已删除');
-                await refreshListBody();
-            }}
-        ]);
-    }
-
-    /* ---- FAB 菜单 ---- */
-    function showFabMenu() {
-        const fab = document.getElementById('chat-fab');
-        const rect = fab.getBoundingClientRect();
-        const phoneRect = document.getElementById('phone-container').getBoundingClientRect();
-        const x = rect.left - phoneRect.left;
-        const y = rect.top - phoneRect.top - 10;
-
-        const items = [
-            { label: '新建角色', icon: '👤', onClick: () => openCharEditor(null) },
-            { label: '导入角色 JSON', icon: '📥', onClick: () => importCharJSON() },
-            { type: 'separator' },
-            { label: '新建单聊', icon: '💬', onClick: () => createNewChat('single') },
-            { label: '新建群聊', icon: '👥', onClick: () => createNewChat('group') },
-            { label: '模型本体对话', icon: '🤖', onClick: () => createModelChat() },
-        ];
-
-        Phone.showContextMenu(x, y, items);
-    }
-
-    /* ============================================角色卡编辑器
-       ============================================ */
-    async function openCharEditor(charId) {
-        let char = charId ? await Store.get(Store.STORES.characters, charId) : null;
-        const isNew = !char;
-        if (!char) {
-            char = { id: 'char_' + uid(), name: '', avatar: '', persona: '', globalPrompt: '', knowledgeBooks: [], customCSS: '', socialProfile: { bio: '' }, isModelSelf: false, createdAt: Date.now() };
-        }
-
-        const allKB = await Store.getAll(Store.STORES.knowledgeBooks);
-
-        Phone.showModal({
-            title: isNew ? '新建角色' : '编辑角色',
-            content: `
-            <div class="char-form">
-                <div class="char-avatar-picker">
-                    <div class="char-avatar-preview" id="char-avatar-preview">
-                        ${char.avatar ? `<img src="${escapeHtml(char.avatar)}" alt="">` : '👤'}
-                    </div>
-                    <div style="flex:1">
-                        <div class="form-group" style="margin-bottom:0">
-                            <label class="form-label">头像 URL</label>
-                            <input class="form-input" id="char-avatar" value="${escapeHtml(char.avatar)}" placeholder="https://..." oninput="document.getElementById('char-avatar-preview').innerHTML=this.value?'<img src=\\''+this.value+'\\' alt=\\"\\">':'👤'">
-                        </div>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">名称</label>
-                    <input class="form-input" id="char-name" value="${escapeHtml(char.name)}" placeholder="角色名称">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">人设描述</label>
-                    <textarea class="form-textarea" id="char-persona" rows="5" placeholder="描述角色的性格、背景、说话方式...">${escapeHtml(char.persona)}</textarea>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">全局提示词（System Prompt 补充）</label>
-                    <textarea class="form-textarea" id="char-prompt" rows="3" placeholder="额外的系统指令...">${escapeHtml(char.globalPrompt)}</textarea>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">绑定知识书</label>
-                    <div id="char-kb-list" style="display:flex;flex-direction:column;gap:6px">
-                        ${allKB.map(kb => `
-                            <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary)">
-                                <input type="checkbox" value="${kb.id}" ${char.knowledgeBooks?.includes(kb.id) ? 'checked' : ''}>
-                                ${escapeHtml(kb.name)}
-                            </label>`).join('') || '<div style="font-size:12px;color:var(--text-tertiary)">暂无知识书</div>'}
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">自定义气泡 CSS</label>
-                    <textarea class="form-textarea" id="char-css" rows="3" placeholder=".chat-bubble { background:}">${escapeHtml(char.customCSS)}</textarea>
-                </div>
-                <div class="form-group" style="margin-bottom:0">
-                    <label class="form-label">社交简介</label>
-                    <input class="form-input" id="char-bio" value="${escapeHtml(char.socialProfile?.bio)}" placeholder="朋友圈/论坛的个人简介">
-                </div>
-            </div>`,
-            actions: [
-                { label: '取消', type: 'secondary' },
-                { label: '保存', type: 'primary', onClick: async () => {
-                    char.name = document.getElementById('char-name').value.trim();
-                    if (!char.name) { showToast('请输入角色名称'); return; }
-                    char.avatar = document.getElementById('char-avatar').value.trim();
-                    char.persona = document.getElementById('char-persona').value.trim();
-                    char.globalPrompt = document.getElementById('char-prompt').value.trim();
-                    char.customCSS = document.getElementById('char-css').value.trim();
-                    char.socialProfile = { bio: document.getElementById('char-bio').value.trim() };
-                    char.knowledgeBooks = [];
-                    document.querySelectorAll('#char-kb-list input[type="checkbox"]:checked').forEach(cb => {
-                        char.knowledgeBooks.push(cb.value);
-                    });
-                    await Store.put(Store.STORES.characters, char);
-                    showToast(isNew ? '角色已创建' : '角色已保存');
-                    if (currentTab === 'contacts') await refreshListBody();
-                }}
-            ]
-        });
-    }
-
-    async function importCharJSON() {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = '.json';
-        input.onchange = async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            try {
-                showToast('正在导入...');
-                const text = await file.text();
-                const data = JSON.parse(text);
-                if (!data.name) throw new Error('无效的角色卡 JSON');
-                if (!data.id) data.id = 'char_' + uid();
-                if (!data.createdAt) data.createdAt = Date.now();
-                await Store.put(Store.STORES.characters, data);
-                showToast(`角色 "${data.name}" 导入成功`);
-                await refreshListBody();
-            } catch (err) {
-                showToast('导入失败: ' + err.message);
-            }
-        };
-        input.click();
-    }
-
-    /* ============================================
-       知识书编辑器
-       ============================================ */
-    async function createKnowledgeBook() {
+    function createKnowledgeBook() {
         Phone.showModal({
             title: '新建知识书',
-            content: `
-                <div class="form-group">
-                    <label class="form-label">名称</label>
-                    <input class="form-input" id="kb-new-name" placeholder="知识书名称">
-                </div>
-                <div class="form-group" style="margin-bottom:0">
-                    <label class="form-label">作用范围</label>
-                    <select class="form-select" id="kb-new-scope">
-                        <option value="global">🌐 全局（所有角色可用）</option>
-                    </select>
-                </div>`,
+            content: `<div class="form-group" style="margin-bottom:0">
+                <label class="form-label">名称</label>
+                <input class="form-input" id="kb-new-name" placeholder="知识书名称">
+            </div>`,
             actions: [
                 { label: '取消', type: 'secondary' },
                 { label: '创建', type: 'primary', onClick: async () => {
                     const name = document.getElementById('kb-new-name').value.trim();
                     if (!name) { showToast('请输入名称'); return; }
                     const kb = {
-                        id: 'kb_' + uid(),
-                        name,
-                        scope: document.getElementById('kb-new-scope').value,
-                        entries: [{ content: '', enabled: true }],
-                        createdAt: Date.now()
+                        id: 'kb_' + uid(), name, scope: 'global',
+                        entries: [{ content: '', enabled: true }], createdAt: Date.now()
                     };
                     await Store.put(Store.STORES.knowledgeBooks, kb);
                     showToast('知识书已创建');
-                    await refreshListBody();
                     openKnowledgeEditor(kb.id);
                 }}
             ]
@@ -584,19 +469,15 @@ const ChatApp = (() => {
     async function openKnowledgeEditor(kbId) {
         const kb = await Store.get(Store.STORES.knowledgeBooks, kbId);
         if (!kb) return;
-
         const appContent = document.getElementById('app-content');
         appContent.innerHTML = `<div class="chat-panel-page">
             <div class="app-header">
-                <button class="app-header-btn app-back-btn" onclick="ChatApp.backToList()">返回</button>
+                <button class="app-header-btn app-back-btn" onclick="ChatApp.openKnowledgeManager()">返回</button>
                 <span class="app-header-title">${escapeHtml(kb.name)}</span>
                 <button class="app-header-btn" onclick="ChatApp.addKBEntry('${kbId}')">＋</button>
             </div>
-            <div class="chat-panel-body" id="kb-entries-body">
-                <div style="display:flex;justify-content:center;padding:40px"><div class="chat-spinner"></div></div>
-            </div>
+            <div class="chat-panel-body" id="kb-entries-body"></div>
         </div>`;
-
         await renderKBEntries(kbId);
     }
 
@@ -605,12 +486,10 @@ const ChatApp = (() => {
         if (!kb) return;
         const body = document.getElementById('kb-entries-body');
         if (!body) return;
-
         if (!kb.entries || kb.entries.length === 0) {
             body.innerHTML = `<div class="chat-empty-state"><div class="chat-empty-icon">📝</div><div class="chat-empty-text">暂无条目，点击 ＋ 添加</div></div>`;
             return;
         }
-
         body.innerHTML = kb.entries.map((entry, i) => `
             <div class="kb-entry" data-idx="${i}">
                 <div class="kb-entry-header">
@@ -659,130 +538,55 @@ const ChatApp = (() => {
         await Store.put(Store.STORES.knowledgeBooks, kb);
     }
 
+    /* ============================================
+       提示词设置（日记+ 总结的提示词可编辑）
+       ============================================ */
+    async function openPromptSettings() {
+        const summaryPrompt = await Store.getSetting('prompt_summary',
+            '请将以下对话总结为简洁的摘要，保留关键信息、情感变化和重要事件。用中文回复。');
+        const diaryPrompt = await Store.getSetting('prompt_diary',
+            '你可以在回复末尾写日记来记录你对用户的观察和感受，用户看不到这部分内容。格式：[DIARY]日记内容[/DIARY]');
+        const responseFormatPrompt = await Store.getSetting('prompt_response_format',
+            `你可以一次回复多条消息，用---MSG_SPLIT--- 分隔。每条消息就是一个独立的聊天气泡。
+如果要引用某条消息，在消息开头加[quote:消息内容的前10个字]
+如果要使用表情包，单独一条消息写[sticker:序号]`);
+
+        Phone.showModal({
+            title: '提示词设置',
+            content: `<div style="max-height:400px;overflow-y:auto;padding:4px">
+                <div class="prompt-editor-section">
+                    <div class="prompt-editor-label">回复格式指令</div>
+                    <textarea class="prompt-editor-textarea" id="prompt-response" rows="6">${escapeHtml(responseFormatPrompt)}</textarea><div class="prompt-editor-hint">控制 AI 如何分割多气泡、引用、使用表情包</div>
+                </div>
+                <div class="prompt-editor-section">
+                    <div class="prompt-editor-label">总结提示词</div>
+                    <textarea class="prompt-editor-textarea" id="prompt-summary" rows="3">${escapeHtml(summaryPrompt)}</textarea>
+                    <div class="prompt-editor-hint">每30条消息自动触发总结时使用</div>
+                </div>
+                <div class="prompt-editor-section" style="margin-bottom:0">
+                    <div class="prompt-editor-label">日记提示词</div>
+                    <textarea class="prompt-editor-textarea" id="prompt-diary" rows="3">${escapeHtml(diaryPrompt)}</textarea>
+                    <div class="prompt-editor-hint">告诉 AI 如何写日记（用户不可见区域）</div>
+                </div>
+            </div>`,
+            actions: [
+                { label: '取消', type: 'secondary' },
+                { label: '保存', type: 'primary', onClick: async () => {
+                    await Store.setSetting('prompt_summary', document.getElementById('prompt-summary').value);
+                    await Store.setSetting('prompt_diary', document.getElementById('prompt-diary').value);
+                    await Store.setSetting('prompt_response_format', document.getElementById('prompt-response').value);
+                    showToast('提示词已保存');
+                }}
+            ]
+        });
+    }
+
     function backToList() {
         Router.open('chat');
     }
 
     /* ============================================
-       创建会话
-       ============================================ */
-    async function createNewChat(type) {
-        const chars = await Store.getAll(Store.STORES.characters);
-        if (chars.length === 0) {
-            showToast('请先创建角色');
-            return;
-        }
-
-        if (type === 'single') {
-            // 选择角色
-            const charOptions = chars.map(c => `
-                <div class="chat-contact-item" data-char-id="${c.id}" style="cursor:pointer">
-                    <div class="chat-contact-avatar">${c.avatar ? `<img src="${escapeHtml(c.avatar)}" alt="">` : (c.name?.[0] || '👤')}</div>
-                    <div class="chat-contact-info">
-                        <div class="chat-contact-name">${escapeHtml(c.name)}</div>
-                    </div>
-                </div>`).join('');
-
-            Phone.showModal({
-                title: '选择角色',
-                content: `<div style="max-height:300px;overflow-y:auto">${charOptions}</div>`,
-                actions: [{ label: '取消', type: 'secondary' }]
-            });
-
-            setTimeout(() => {
-                document.querySelectorAll('.modal-box [data-char-id]').forEach(el => {
-                    el.addEventListener('click', async () => {
-                        Phone.closeModal();
-                        await startChatWith(el.dataset.charId);
-                    });
-                });
-            }, 100);
-        } else if (type === 'group') {
-            const charChecks = chars.map(c => `
-                <label style="display:flex;align-items:center;gap:10px;padding:8px 0;font-size:14px;color:var(--text-primary);cursor:pointer">
-                    <input type="checkbox" value="${c.id}">
-                    <span>${c.avatar ? '🖼' : '👤'}</span><span>${escapeHtml(c.name)}</span>
-                </label>`).join('');
-
-            Phone.showModal({
-                title: '新建群聊',
-                content: `
-                    <div class="form-group">
-                        <label class="form-label">群名称</label>
-                        <input class="form-input" id="group-name" placeholder="群聊名称">
-                    </div>
-                    <div class="form-group" style="margin-bottom:0">
-                        <label class="form-label">选择成员（至少2个）</label>
-                        <div id="group-members" style="max-height:200px;overflow-y:auto">${charChecks}</div>
-                    </div>`,
-                actions: [
-                    { label: '取消', type: 'secondary' },
-                    { label: '创建', type: 'primary', onClick: async () => {
-                        const name = document.getElementById('group-name').value.trim();
-                        const selected = [];
-                        document.querySelectorAll('#group-members input:checked').forEach(cb => selected.push(cb.value));
-                        if (selected.length < 2) { showToast('请至少选择2个角色'); return; }
-                        const chat = {
-                            id: 'chat_' + uid(),
-                            type: 'group',
-                            name: name || '群聊',
-                            characterIds: selected,
-                            messageCount: 0,
-                            lastMessage: '',
-                            updatedAt: Date.now(),
-                            createdAt: Date.now()
-                        };
-                        await Store.put(Store.STORES.chats, chat);
-                        showToast('群聊已创建');
-                        Router.open('chat', { chatId: chat.id });
-                    }}
-                ]
-            });
-        }
-    }
-
-    async function startChatWith(charId) {
-        const char = await Store.get(Store.STORES.characters, charId);
-        if (!char) return;
-
-        // Check if chat already exists
-        const allChats = await Store.getAll(Store.STORES.chats);
-        const existing = allChats.find(c => c.type === 'single' && c.characterIds?.[0] === charId);
-        if (existing) {
-            Router.open('chat', { chatId: existing.id });
-            return;
-        }
-
-        const chat = {
-            id: 'chat_' + uid(),
-            type: 'single',
-            name: char.name,
-            characterIds: [charId],
-            messageCount: 0,
-            lastMessage: '',
-            updatedAt: Date.now(),
-            createdAt: Date.now()
-        };
-        await Store.put(Store.STORES.chats, chat);
-        Router.open('chat', { chatId: chat.id });
-    }
-
-    async function createModelChat() {
-        const chat = {
-            id: 'chat_' + uid(),
-            type: 'model',
-            name: '模型本体',
-            characterIds: [],
-            messageCount: 0,
-            lastMessage: '',
-            updatedAt: Date.now(),
-            createdAt: Date.now()
-        };
-        await Store.put(Store.STORES.chats, chat);
-        Router.open('chat', { chatId: chat.id });
-    }
-
-    /* ============================================聊天界面
+       聊天界面
        ============================================ */
     async function renderChatView(chatId) {
         const chat = await Store.get(Store.STORES.chats, chatId);
@@ -812,8 +616,7 @@ const ChatApp = (() => {
                     <button class="chat-header-btn" onclick="ChatApp.openChatMenu()" title="菜单">☰</button>
                 </div>
             </div>
-            <div class="chat-messages" id="chat-messages">
-                <div style="display:flex;justify-content:center;padding:40px"><div class="chat-spinner"></div></div>
+            <div class="chat-messages" id="chat-messages"><div style="display:flex;justify-content:center;padding:40px"><div class="chat-spinner"></div></div>
             </div>
             <div id="chat-reply-bar-container"></div>
             <div class="chat-input-area" id="chat-input-area">
@@ -835,7 +638,6 @@ const ChatApp = (() => {
                     </div>
                 </div>
             </div>
-            <div id="sticker-panel-container"></div>
         </div>`;
     }
 
@@ -844,7 +646,6 @@ const ChatApp = (() => {
         replyTo = null;
         stickerPanelOpen = false;
 
-        // Auto-resize textarea
         const input = document.getElementById('chat-input');
         if (input) {
             input.addEventListener('input', () => {
@@ -871,18 +672,15 @@ const ChatApp = (() => {
                     document.head.appendChild(style);
                 }
             }
-        }
-
-        await loadMessages();
+        }await loadMessages();
     }
 
     function exitChat() {
-        // Abort any ongoing generation
         if (abortCtrl) { abortCtrl.abort(); abortCtrl = null; }
-        // Remove custom CSS
         document.querySelectorAll('[id^="custom-css-"]').forEach(el => el.remove());
         currentChatId = null;
         replyTo = null;
+        stickerPanelOpen = false;
         Router.open('chat');
     }
 
@@ -890,7 +688,6 @@ const ChatApp = (() => {
     async function loadMessages() {
         const container = document.getElementById('chat-messages');
         if (!container) return;
-
         try {
             const msgs = await Store.getAllByIndex(Store.STORES.messages, 'chatId', currentChatId);
             msgs.sort((a, b) => a.timestamp - b.timestamp);
@@ -912,32 +709,24 @@ const ChatApp = (() => {
             let lastRole = '';
             let lastCharId = '';
 
-            msgs.forEach((msg, idx) => {
+            msgs.forEach(msg => {
                 if (msg.isDeleted) return;
-
-                // Date divider
                 const msgDate = new Date(msg.timestamp).toDateString();
                 if (msgDate !== lastDate) {
                     html += `<div class="chat-date-divider"><span>${fmtDate(msg.timestamp)}</span></div>`;
                     lastDate = msgDate;
-                    lastRole = '';
-                    lastCharId = '';
+                    lastRole = '';lastCharId = '';
                 }
-
                 const isUser = msg.role === 'user';
                 const char = msg.characterId ? chars[msg.characterId] : null;
                 const consecutive = msg.role === lastRole && msg.characterId === lastCharId;
-
                 html += renderMsgBubble(msg, char, isUser, consecutive, msgs);
-
                 lastRole = msg.role;
                 lastCharId = msg.characterId || '';
             });
 
             container.innerHTML = html;
             scrollToBottom();
-
-            // Bind message interactions
             bindMsgEvents(container);
         } catch (e) {
             container.innerHTML = `<div class="chat-empty-state"><div class="chat-empty-icon">⚠️</div><div class="chat-empty-text">加载消息失败: ${escapeHtml(e.message)}</div></div>`;
@@ -955,7 +744,6 @@ const ChatApp = (() => {
         if (msg.replyToId) {
             const quoted = allMsgs.find(m => m.id === msg.replyToId);
             if (quoted) {
-                const qChar = quoted.characterId ? null : null; // simplified
                 const qName = quoted.role === 'user' ? '你' : (char?.name || '助手');
                 quoteHtml = `<div class="chat-quote" data-msg-id="${quoted.id}">
                     <div class="chat-quote-sender">${escapeHtml(qName)}</div>
@@ -964,7 +752,6 @@ const ChatApp = (() => {
             }
         }
 
-        // Bubble content by type
         let bubbleContent = '';
         let bubbleClass = 'chat-bubble';
         const type = msg.type || 'text';
@@ -972,50 +759,70 @@ const ChatApp = (() => {
         switch (type) {
             case 'sticker':
                 bubbleClass += ' sticker-bubble';
-                bubbleContent = `<img class="chat-sticker-img" src="${escapeHtml(msg.typeData?.url || '')}" alt="${escapeHtml(msg.typeData?.description || '')}" onerror="this.alt='表情加载失败';this.style.padding='20px';this.style.fontSize='12px'">`;
+                bubbleContent = `<img class="chat-sticker-img" src="${escapeHtml(msg.typeData?.url || '')}" alt="${escapeHtml(msg.typeData?.description || '')}" onerror="this.alt='表情加载失败';this.style.padding='20px';this.style.fontSize='12px';this.style.color='var(--text-tertiary)'">`;
                 break;
             case 'image':
                 bubbleClass += ' image-bubble';
-                bubbleContent = `<div class="chat-image-content"><img src="${escapeHtml(msg.typeData?.url || '')}" alt="" onerror="this.parentElement.innerHTML='<div style=\\'padding:20px;text-align:center;color:var(--text-tertiary)\\'>图片加载失败</div>'"></div>${msg.typeData?.description ? `<div class="chat-image-desc">${escapeHtml(msg.typeData.description)}</div>` : ''}`;
+                bubbleContent = `<div class="chat-image-content"><img src="${escapeHtml(msg.typeData?.url || '')}" alt="" onerror="this.parentElement.innerHTML='<div style=\\'padding:20px;text-align:center;color:var(--text-tertiary);font-size:12px\\'>图片加载失败</div>'"></div>${msg.typeData?.description ? `<div class="chat-image-desc">${escapeHtml(msg.typeData.description)}</div>` : ''}`;
                 break;
             case 'voice':
                 bubbleClass += ' voice-bubble';
                 bubbleContent = `<div class="chat-voice-content">
-                    <span class="chat-voice-icon">🎤</span>
-                    <div class="chat-voice-waves"><div class="chat-voice-wave"></div><div class="chat-voice-wave"></div><div class="chat-voice-wave"></div><div class="chat-voice-wave"></div><div class="chat-voice-wave"></div></div>
+                    <div class="chat-voice-icon">${ICONS.play}</div>
+                    <div class="chat-voice-waves"><div class="chat-voice-wave"></div><div class="chat-voice-wave"></div><div class="chat-voice-wave"></div><div class="chat-voice-wave"></div><div class="chat-voice-wave"></div><div class="chat-voice-wave"></div><div class="chat-voice-wave"></div><div class="chat-voice-wave"></div></div>
                     <span class="chat-voice-duration">${escapeHtml(msg.typeData?.duration || '0:03')}</span>
                 </div>`;
                 break;
             case 'transfer':
                 bubbleClass += ' transfer-bubble';
-                bubbleContent = `<div class="chat-transfer-content">
-                    <span class="chat-transfer-icon">💰</span>
-                    <div class="chat-transfer-info">
-                        <div class="chat-transfer-amount">${escapeHtml(msg.typeData?.amount || '¥0')}</div>
-                        <div class="chat-transfer-label">${escapeHtml(msg.content || '转账')}</div>
+                bubbleContent = `
+                    <div class="chat-transfer-header">
+                        <div class="chat-transfer-icon-wrap">${ICONS.money}</div>
+                        <div class="chat-transfer-info">
+                            <div class="chat-transfer-amount">${escapeHtml(msg.typeData?.amount || '¥0')}</div>
+                            <div class="chat-transfer-note">${escapeHtml(msg.content || '转账')}</div>
+                        </div>
                     </div>
-                </div>`;
+                    <div class="chat-transfer-footer">
+                        <span class="chat-transfer-label">转账</span>
+                        <span class="chat-transfer-status">已收款</span>
+                    </div>`;
                 break;
             case 'location':
                 bubbleClass += ' location-bubble';
-                bubbleContent = `<div class="chat-location-content">
-                    <span class="chat-location-icon">📍</span>
-                    <span class="chat-location-text">${escapeHtml(msg.typeData?.address || msg.content || '位置')}</span>
-                </div>`;
+                bubbleContent = `
+                    <div class="chat-location-map">
+                        <div class="chat-location-pin">${ICONS.pin}</div>
+                    </div>
+                    <div class="chat-location-info">
+                        <div class="chat-location-text">
+                            <div class="chat-location-name">${escapeHtml(msg.typeData?.address || msg.content || '位置')}</div>
+                            <div class="chat-location-addr">点击查看详情</div>
+                        </div>
+                        <span class="chat-location-arrow">›</span>
+                    </div>`;
                 break;
             case 'gift':
                 bubbleClass += ' gift-bubble';
-                bubbleContent = `<div class="chat-gift-icon">🎁</div><div class="chat-gift-label">${escapeHtml(msg.content || '礼物')}</div>`;
+                bubbleContent = `
+                    <div class="chat-gift-header">
+                        <div class="chat-gift-icon-wrap">${ICONS.gift}</div>
+                        <div class="chat-gift-label">${escapeHtml(msg.content || '礼物')}</div>
+                    </div>
+                    <div class="chat-gift-footer">已拆开</div>`;
                 break;
             case 'article':
                 bubbleClass += ' article-bubble';
-                bubbleContent = `<div class="chat-article-content">
-                    <div class="chat-article-title">${escapeHtml(msg.typeData?.title || '文章')}</div>
-                    <div class="chat-article-desc">${escapeHtml(msg.content || '')}</div>
-                </div><div class="chat-article-footer">📄公众号文章</div>`;
+                bubbleContent = `
+                    <div class="chat-article-body">
+                        <div class="chat-article-title">${escapeHtml(msg.typeData?.title || '文章')}</div>
+                        <div class="chat-article-desc">${escapeHtml(msg.content || '')}</div>
+                    </div>
+                    <div class="chat-article-footer">${ICONS.article}<span>公众号文章</span></div>`;
                 break;
             default:
-                bubbleContent = formatTextContent(msg.content || '');}
+                bubbleContent = formatTextContent(msg.content || '');
+        }
 
         return `
         <div class="chat-msg-row ${roleClass}${consClass}" data-msg-id="${msg.id}">
@@ -1033,7 +840,6 @@ const ChatApp = (() => {
     }
 
     function formatTextContent(text) {
-        // Basic markdown-like formatting
         let html = escapeHtml(text);
         html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
         html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
@@ -1044,18 +850,11 @@ const ChatApp = (() => {
     function bindMsgEvents(container) {
         container.querySelectorAll('.chat-msg-row').forEach(row => {
             let pressTimer;
-            row.addEventListener('contextmenu', e => {
-                e.preventDefault();
-                showMsgContextMenu(e, row.dataset.msgId);
-            });
-            row.addEventListener('pointerdown', e => {
-                pressTimer = setTimeout(() => showMsgContextMenu(e, row.dataset.msgId), 500);
-            });
+            row.addEventListener('contextmenu', e => { e.preventDefault(); showMsgContextMenu(e, row.dataset.msgId); });
+            row.addEventListener('pointerdown', e => { pressTimer = setTimeout(() => showMsgContextMenu(e, row.dataset.msgId), 500); });
             row.addEventListener('pointerup', () => clearTimeout(pressTimer));
             row.addEventListener('pointermove', () => clearTimeout(pressTimer));
         });
-
-        // Quote click to scroll
         container.querySelectorAll('.chat-quote').forEach(q => {
             q.addEventListener('click', () => {
                 const target = container.querySelector(`[data-msg-id="${q.dataset.msgId}"]`);
@@ -1069,29 +868,28 @@ const ChatApp = (() => {
 
     function showMsgContextMenu(e, msgId) {
         const phoneRect = document.getElementById('phone-container').getBoundingClientRect();
-        const x = (e.clientX || e.pageX) - phoneRect.left;
-        const y = (e.clientY || e.pageY) - phoneRect.top;
-
-        Phone.showContextMenu(x, y, [
-            { label: '引用', icon: '↩', onClick: () => setReplyTo(msgId) },
-            { label: '重新生成', icon: '🔄', onClick: () => rerollMsg(msgId) },
-            { type: 'separator' },
-            { label: '删除', icon: '🗑', danger: true, onClick: () => deleteMsg(msgId) }
-        ]);
+        Phone.showContextMenu(
+            (e.clientX || e.pageX) - phoneRect.left,
+            (e.clientY || e.pageY) - phoneRect.top,
+            [
+                { label: '引用', icon: '↩', onClick: () => setReplyTo(msgId) },
+                { label: '重新生成', icon: '🔄', onClick: () => rerollMsg(msgId) },
+                { type: 'separator' },
+                { label: '删除', icon: '🗑', danger: true, onClick: () => deleteMsg(msgId) }
+            ]
+        );
     }
 
     async function setReplyTo(msgId) {
         const msg = await Store.get(Store.STORES.messages, msgId);
         if (!msg) return;
         replyTo = msg;
-
         const chat = await Store.get(Store.STORES.chats, currentChatId);
         const chars = {};
         for (const cid of (chat?.characterIds || [])) {
             const c = await Store.get(Store.STORES.characters, cid);
             if (c) chars[c.id] = c;
         }
-
         const senderName = msg.role === 'user' ? '你' : (chars[msg.characterId]?.name || '助手');
         const container = document.getElementById('chat-reply-bar-container');
         container.innerHTML = `
@@ -1102,7 +900,6 @@ const ChatApp = (() => {
                 </div>
                 <button class="chat-reply-close" onclick="ChatApp.clearReply()">✕</button>
             </div>`;
-
         document.getElementById('chat-input')?.focus();
     }
 
@@ -1127,12 +924,8 @@ const ChatApp = (() => {
             showToast('只能重新生成 AI 消息');
             return;
         }
-
-        // Delete this message
         msg.isDeleted = true;
         await Store.put(Store.STORES.messages, msg);
-
-        // Trigger AI to regenerate
         await triggerAIResponse();}
 
     /* ---- 发送消息 ---- */
@@ -1140,7 +933,6 @@ const ChatApp = (() => {
         const input = document.getElementById('chat-input');
         const text = input?.value?.trim();
         if (!text) return;
-
         await saveUserMessage(text);
         input.value = '';
         input.style.height = 'auto';
@@ -1152,36 +944,23 @@ const ChatApp = (() => {
     async function sendAndTrigger() {
         const input = document.getElementById('chat-input');
         const text = input?.value?.trim();
-
         if (text) {
             await saveUserMessage(text);
             input.value = '';
             input.style.height = 'auto';
             clearReply();
         }
-
-        // Even if no new text, trigger AI (for re-triggering after silent sends)
         await loadMessages();
         await triggerAIResponse();
     }
 
     async function saveUserMessage(text) {
         const msg = {
-            id: 'msg_' + uid(),
-            chatId: currentChatId,
-            role: 'user',
-            characterId: null,
-            content: text,
-            type: 'text',
-            typeData: null,
-            replyToId: replyTo?.id || null,
-            timestamp: Date.now(),
-            isDeleted: false
+            id: 'msg_' + uid(), chatId: currentChatId, role: 'user',
+            characterId: null, content: text, type: 'text', typeData: null,
+            replyToId: replyTo?.id || null, timestamp: Date.now(), isDeleted: false
         };
-        await Store.put(Store.STORES.messages, msg);
-
-        // Update chat
-        const chat = await Store.get(Store.STORES.chats, currentChatId);
+        await Store.put(Store.STORES.messages, msg);const chat = await Store.get(Store.STORES.chats, currentChatId);
         if (chat) {
             chat.messageCount = (chat.messageCount || 0) + 1;
             chat.lastMessage = text.slice(0, 50);
@@ -1194,39 +973,24 @@ const ChatApp = (() => {
     async function triggerAIResponse() {
         const chat = await Store.get(Store.STORES.chats, currentChatId);
         if (!chat) return;
-
         const statusEl = document.getElementById('chat-status');
-        const container = document.getElementById('chat-messages');
 
         try {
-            // Show typing indicator
             if (statusEl) statusEl.textContent = '正在输入...';
             showTypingIndicator();
 
-            // Build messages for API
             const apiMessages = await buildAPIMessages(chat);
 
-            // Determine which character responds
             let respondChar = null;
-            if (chat.type === 'group') {
-                respondChar = await pickGroupResponder(chat, apiMessages);
-            } else if (chat.type === 'single') {
-                const c = await Store.get(Store.STORES.characters, chat.characterIds[0]);
-                respondChar = c;
+            if (chat.type === 'single' && chat.characterIds[0]) {
+                respondChar = await Store.get(Store.STORES.characters, chat.characterIds[0]);
             }
-            // model type: no character
 
-            // Add response instruction for multi-bubble + special types
-            const responseFormatInstruction = buildResponseFormatInstruction(chat, respondChar);
-            apiMessages.push({ role: 'system', content: responseFormatInstruction });
-
-            // Stream response
             abortCtrl = new AbortController();
             let fullText = '';
 
             removeTypingIndicator();
 
-            // Create temporary streaming bubble
             const tempId = 'streaming_' + uid();
             appendStreamingBubble(tempId, respondChar, chat.type === 'model');
 
@@ -1243,7 +1007,6 @@ const ChatApp = (() => {
                 },
                 signal: abortCtrl.signal
             });
-
         } catch (e) {
             removeTypingIndicator();
             if (e.name === 'AbortError') {
@@ -1267,8 +1030,6 @@ const ChatApp = (() => {
 
     async function buildAPIMessages(chat) {
         const messages = [];
-
-        // System prompt
         let systemPrompt = '';
 
         if (chat.type === 'model') {
@@ -1280,14 +1041,16 @@ const ChatApp = (() => {
                 if (c) chars.push(c);
             }
 
-            // User settings
-            const userName = await Store.getSetting('user_name','User');
+            const userName = await Store.getSetting('user_name', 'User');
             const userDesc = await Store.getSetting('user_desc', '');
+            const userPersona = await Store.getSetting('user_persona', '');
+            const userPrefs = await Store.getSetting('user_preferences', '');
 
             systemPrompt = `你正在进行角色扮演聊天。用户名为"${userName}"。`;
-            if (userDesc) systemPrompt += `\n用户描述: ${userDesc}`;
+            if (userDesc) systemPrompt += `\n用户简介: ${userDesc}`;
+            if (userPersona) systemPrompt += `\n用户身份设定: ${userPersona}`;
+            if (userPrefs) systemPrompt += `\n用户喜好: ${userPrefs}`;
 
-            // Character personas
             chars.forEach(c => {
                 systemPrompt += `\n\n【角色: ${c.name}】\n${c.persona || '无特殊人设'}`;
                 if (c.globalPrompt) systemPrompt += `\n${c.globalPrompt}`;
@@ -1299,33 +1062,33 @@ const ChatApp = (() => {
                 if (kb.scope === 'global') return true;
                 return chars.some(c => c.knowledgeBooks?.includes(kb.id));
             });
-
             if (relevantKB.length > 0) {
                 systemPrompt += '\n\n【知识库】';
                 relevantKB.forEach(kb => {
                     const entries = kb.entries?.filter(e => e.enabled).map(e => e.content).filter(Boolean);
-                    if (entries?.length) {
-                        systemPrompt += `\n[${kb.name}]\n${entries.join('\n')}`;
-                    }
+                    if (entries?.length) systemPrompt += `\n[${kb.name}]\n${entries.join('\n')}`;
                 });
             }
 
-            // Sticker info
+            // Stickers
             const stickers = await Store.getSetting('sticker_packs', []);
             if (stickers.length > 0) {
                 systemPrompt += '\n\n【可用表情包】\n你可以在回复中使用表情包。格式: [sticker:序号]\n';
-                stickers.forEach((s, i) => {
-                    systemPrompt += `${i}: ${s.desc}\n`;
-                });
+                stickers.forEach((s, i) => { systemPrompt += `${i}: ${s.desc}\n`; });
             }
 
-            // Diary
+            // Diary — AI 可以阅读自己的日记
             for (const c of chars) {
                 const diaries = await Store.getAllByIndex(Store.STORES.diaries, 'charId', c.id);
                 if (diaries.length > 0) {
-                    systemPrompt += `\n\n【${c.name}的日记/记忆】\n${diaries.map(d => d.content).join('\n')}`;
+                    systemPrompt += `\n\n【${c.name}的日记/记忆（只有你自己能看到，用户看不到）】\n${diaries.map(d => d.content).join('\n')}`;
                 }
             }
+
+            // Diary prompt (user-editable)
+            const diaryPrompt = await Store.getSetting('prompt_diary',
+                '你可以在回复末尾写日记来记录你对用户的观察和感受，用户看不到这部分内容。格式：[DIARY]日记内容[/DIARY]');
+            systemPrompt += `\n\n${diaryPrompt}`;
         }
 
         messages.push({ role: 'system', content: systemPrompt });
@@ -1334,11 +1097,10 @@ const ChatApp = (() => {
         const summaries = await Store.getAllByIndex(Store.STORES.summaries, 'chatId', chat.id);
         summaries.sort((a, b) => (a.messageRange?.from || 0) - (b.messageRange?.from || 0));
         if (summaries.length > 0) {
-            const sumText = summaries.map(s => s.content).join('\n---\n');
-            messages.push({ role: 'system', content: `【之前的对话总结】\n${sumText}` });
+            messages.push({ role: 'system', content: `【之前的对话总结】\n${summaries.map(s => s.content).join('\n---\n')}` });
         }
 
-        // Recent messages (after last summary)
+        // Recent messages
         const allMsgs = await Store.getAllByIndex(Store.STORES.messages, 'chatId', chat.id);
         allMsgs.sort((a, b) => a.timestamp - b.timestamp);
         const activeMsgs = allMsgs.filter(m => !m.isDeleted);
@@ -1362,14 +1124,29 @@ const ChatApp = (() => {
                 if (quoted) content = `[引用: "${quoted.content?.slice(0, 30) || '...'}"] ${content}`;
             }
 
-            if (m.role === 'assistant' && m.characterId) {
-                // Prefix with character name for group chats
-                const charName = chat.characterIds?.length > 1 ? `[${m.characterId}] ` : '';
-                messages.push({ role: 'assistant', content: charName + content });
+            if (m.role === 'assistant' && m.characterId && chat.characterIds?.length > 1) {
+                messages.push({ role: 'assistant', content: `[${m.characterId}] ${content}` });
             } else {
                 messages.push({ role: m.role, content });
             }
         });
+
+        // Response format instruction (user-editable)
+        const responseFormatPrompt = await Store.getSetting('prompt_response_format',
+            `你可以一次回复多条消息，用---MSG_SPLIT--- 分隔。每条消息就是一个独立的聊天气泡。
+如果要引用某条消息，在消息开头加 [quote:消息内容的前10个字]
+如果要使用表情包，单独一条消息写[sticker:序号]`);
+
+        let formatInstruction = responseFormatPrompt;
+        if (chat.type === 'group') {
+            formatInstruction += `\n\n你正在群聊中。请在回复最开头标注角色名，格式: [CHAR:角色名]
+例如:
+[CHAR:小明]你好呀！
+---MSG_SPLIT---
+[CHAR:小红]嗨嗨~`;
+        }
+
+        messages.push({ role: 'system', content: formatInstruction });
 
         // Check if summary needed
         if (recentMsgs.length >= 30) {
@@ -1379,50 +1156,12 @@ const ChatApp = (() => {
         return messages;
     }
 
-    function buildResponseFormatInstruction(chat, respondChar) {
-        let instruction = `\n【回复格式说明】
-你可以一次回复多条消息，用---MSG_SPLIT--- 分隔。
-每条消息就是一个独立的聊天气泡。
-
-如果要引用某条消息，在消息开头加 [quote:消息内容的前10个字]
-
-如果要使用表情包，单独一条消息写[sticker:序号]
-
-如果要写日记（记录你对用户的观察，用户看不到），在最后加:
-[DIARY]日记内容[/DIARY]
-
-示例回复:
-嗯嗯好的~
----MSG_SPLIT---
-[sticker:0]
----MSG_SPLIT---
-[quote:你今天怎么]我今天很开心哦！`;
-
-        if (chat.type === 'group') {
-            instruction += `\n\n你正在群聊中。请以你选择的角色身份回复。在回复最开头标注角色名，格式: [CHAR:角色名]
-例如:
-[CHAR:小明]你好呀！
----MSG_SPLIT---
-[CHAR:小红]嗨嗨~`;
-        }
-
-        return instruction;
-    }
-
-    async function pickGroupResponder(chat, apiMessages) {
-        // For group chat, let AI decide who responds
-        // Return null, we'll parse from response
-        return null;
-    }
-
     /* ---- 流式气泡 ---- */
     function appendStreamingBubble(tempId, char, isModel) {
         const container = document.getElementById('chat-messages');
         if (!container) return;
-
         const avatar = isModel ? '🤖' : (char?.avatar ? `<img src="${escapeHtml(char.avatar)}" alt="">` : (char?.name?.[0] || '🤖'));
         const name = isModel ? '模型' : (char?.name || '助手');
-
         const row = document.createElement('div');
         row.className = 'chat-msg-row assistant';
         row.id = tempId;
@@ -1430,9 +1169,8 @@ const ChatApp = (() => {
             <div class="chat-msg-avatar">${avatar}</div>
             <div class="chat-msg-body">
                 <div class="chat-msg-sender">${escapeHtml(name)}</div>
-                <div class="chat-bubble"><span class="streaming-text"></span><span class="streaming-cursor" style="display:inline-block;width:2px;height:14px;background:var(--text-primary);margin-left:2px;animation:blink 1s infinite">​</span></div>
+                <div class="chat-bubble"><span class="streaming-text"></span><span style="display:inline-block;width:2px;height:14px;background:var(--text-primary);margin-left:2px;animation:blink 1s infinite">​</span></div>
             </div>`;
-
         container.appendChild(row);
         scrollToBottom();
     }
@@ -1446,8 +1184,7 @@ const ChatApp = (() => {
     }
 
     function removeStreamingBubble(tempId) {
-        const el = document.getElementById(tempId);
-        if (el) el.remove();
+        document.getElementById(tempId)?.remove();
     }
 
     function showTypingIndicator() {
@@ -1480,7 +1217,7 @@ const ChatApp = (() => {
             <div class="chat-msg-avatar">⚠️</div>
             <div class="chat-msg-body">
                 <div class="chat-error-bubble">
-                    <span>生成失败: ${escapeHtml(errorMsg)}</span>
+                    <span style="flex:1">生成失败: ${escapeHtml(errorMsg)}</span>
                     <button class="chat-error-retry" onclick="ChatApp.retryLastResponse()">重试</button>
                 </div>
             </div>`;
@@ -1489,7 +1226,6 @@ const ChatApp = (() => {
     }
 
     async function retryLastResponse() {
-        // Remove error bubble
         const container = document.getElementById('chat-messages');
         const lastRow = container?.lastElementChild;
         if (lastRow?.querySelector('.chat-error-bubble')) lastRow.remove();
@@ -1506,9 +1242,7 @@ const ChatApp = (() => {
             fullText = fullText.replace(/\[DIARY\][\s\S]*?\[\/DIARY\]/, '').trim();
         }
 
-        // Split into multiple messages
         const parts = fullText.split(/---MSG_SPLIT---/).map(p => p.trim()).filter(Boolean);
-
         const stickers = await Store.getSetting('sticker_packs', []);
         const allMsgs = await Store.getAllByIndex(Store.STORES.messages, 'chatId', chat.id);
         const activeMsgs = allMsgs.filter(m => !m.isDeleted).sort((a, b) => a.timestamp - b.timestamp);
@@ -1516,14 +1250,12 @@ const ChatApp = (() => {
         for (let i = 0; i < parts.length; i++) {
             let part = parts[i];
             let charId = respondChar?.id || null;
-            let charName = respondChar?.name || null;
 
             // Parse character for group chat
             const charMatch = part.match(/^\[CHAR:(.+?)\]/);
             if (charMatch) {
-                charName = charMatch[1].trim();
+                const charName = charMatch[1].trim();
                 part = part.replace(/^\[CHAR:.+?\]/, '').trim();
-                // Find character by name
                 for (const cid of (chat.characterIds || [])) {
                     const c = await Store.get(Store.STORES.characters, cid);
                     if (c && c.name === charName) { charId = c.id; break; }
@@ -1536,7 +1268,6 @@ const ChatApp = (() => {
             if (quoteMatch) {
                 const quoteText = quoteMatch[1];
                 part = part.replace(/^\[quote:.+?\]/, '').trim();
-                // Find quoted message
                 const found = activeMsgs.find(m => m.content?.startsWith(quoteText));
                 if (found) replyToId = found.id;
             }
@@ -1549,22 +1280,14 @@ const ChatApp = (() => {
                 const idx = parseInt(stickerMatch[1]);
                 if (stickers[idx]) {
                     msgType = 'sticker';
-                    typeData = { url: stickers[idx].url, description: stickers[idx].desc };
-                    part = stickers[idx].desc || '表情';
+                    typeData = { url: stickers[idx].url, description: stickers[idx].desc };part = stickers[idx].desc || '表情';
                 }
             }
 
             const msg = {
-                id: 'msg_' + uid(),
-                chatId: chat.id,
-                role: 'assistant',
-                characterId: charId,
-                content: part,
-                type: msgType,
-                typeData,
-                replyToId,
-                timestamp: Date.now() + i, // Slight offset for ordering
-                isDeleted: false
+                id: 'msg_' + uid(), chatId: chat.id, role: 'assistant',
+                characterId: charId, content: part, type: msgType, typeData,
+                replyToId, timestamp: Date.now() + i, isDeleted: false
             };
             await Store.put(Store.STORES.messages, msg);}
 
@@ -1577,16 +1300,23 @@ const ChatApp = (() => {
 
         // Save diary
         if (diary && respondChar) {
-            const diaryEntry = {
-                id: 'diary_' + respondChar.id,
-                charId: respondChar.id,
-                content: diary,
-                updatedAt: Date.now()
-            };
-            await Store.put(Store.STORES.diaries, diaryEntry);
+            // Append to existing diary
+            const existing = await Store.getAllByIndex(Store.STORES.diaries, 'charId', respondChar.id);
+            const existingDiary = existing[0];
+            if (existingDiary) {
+                existingDiary.content = existingDiary.content + '\n---\n' + diary;
+                existingDiary.updatedAt = Date.now();
+                await Store.put(Store.STORES.diaries, existingDiary);
+            } else {
+                await Store.put(Store.STORES.diaries, {
+                    id: 'diary_' + respondChar.id, charId: respondChar.id,
+                    content: diary, updatedAt: Date.now()
+                });
+            }
         }
 
-        await loadMessages();}
+        await loadMessages();
+    }
 
     /* ---- 总结 ---- */
     async function triggerSummary(chat, activeMsgs, existingSummaries) {
@@ -1594,29 +1324,27 @@ const ChatApp = (() => {
         const fromIdx = lastSummary ? (lastSummary.messageRange?.to || 0) : 0;
         const toIdx = fromIdx + 30;
         const toSummarize = activeMsgs.slice(fromIdx, toIdx);
-
         if (toSummarize.length< 30) return;
 
         try {
-            const summaryPrompt = toSummarize.map(m => {
+            const summaryText = toSummarize.map(m => {
                 const prefix = m.role === 'user' ? 'User' : (m.characterId ||'AI');
                 return `${prefix}: ${m.content || '[特殊消息]'}`;
             }).join('\n');
 
+            const summaryPrompt = await Store.getSetting('prompt_summary',
+                '请将以下对话总结为简洁的摘要，保留关键信息、情感变化和重要事件。用中文回复。');
+
             const result = await API.chat([
-                { role: 'system', content: '请将以下对话总结为简洁的摘要，保留关键信息、情感变化和重要事件。用中文回复。' },
-                { role: 'user', content: summaryPrompt }
+                { role: 'system', content: summaryPrompt },
+                { role: 'user', content: summaryText }
             ], { stream: false, temperature: 0.3, max_tokens: 1024 });
 
-            const summary = {
-                id: 'sum_' + uid(),
-                chatId: chat.id,
-                content: result,
+            await Store.put(Store.STORES.summaries, {
+                id: 'sum_' + uid(), chatId: chat.id, content: result,
                 messageRange: { from: fromIdx, to: toIdx },
-                createdAt: Date.now(),
-                editedAt: null
-            };
-            await Store.put(Store.STORES.summaries, summary);
+                createdAt: Date.now(), editedAt: null
+            });
             Logger.info('Summary created', `Messages ${fromIdx}-${toIdx}`);
         } catch (e) {
             Logger.error('Summary failed', e.message);
@@ -1643,10 +1371,8 @@ const ChatApp = (() => {
                         { label: '发送', type: 'primary', onClick: async () => {
                             const url = document.getElementById('special-img-url').value.trim();
                             if (!url) { showToast('请输入图片URL'); return; }
-                            await saveSpecialMessage('image', `[图片]`, {
-                                url, description: document.getElementById('special-img-desc').value.trim()
-                            });
-                }}
+                            await saveSpecialMessage('image', '[图片]', { url, description: document.getElementById('special-img-desc').value.trim() });
+                        }}
                     ]
                 });
                 break;
@@ -1667,9 +1393,7 @@ const ChatApp = (() => {
                         { label: '发送', type: 'primary', onClick: async () => {
                             const text = document.getElementById('special-voice-text').value.trim();
                             if (!text) { showToast('请输入语音内容'); return; }
-                            await saveSpecialMessage('voice', text, {
-                                duration: document.getElementById('special-voice-dur').value.trim() || '0:15'
-                            });
+                            await saveSpecialMessage('voice', text, { duration: document.getElementById('special-voice-dur').value.trim() || '0:15' });
                         }}
                     ]
                 });
@@ -1734,97 +1458,66 @@ const ChatApp = (() => {
 
     async function saveSpecialMessage(type, content, typeData) {
         const msg = {
-            id: 'msg_' + uid(),
-            chatId: currentChatId,
-            role: 'user',
-            characterId: null,
-            content,
-            type,
-            typeData,
-            replyToId: replyTo?.id || null,
-            timestamp: Date.now(),
-            isDeleted: false
+            id: 'msg_' + uid(), chatId: currentChatId, role: 'user',
+            characterId: null, content, type, typeData,
+            replyToId: replyTo?.id || null, timestamp: Date.now(), isDeleted: false
         };
         await Store.put(Store.STORES.messages, msg);
-
         const chat = await Store.get(Store.STORES.chats, currentChatId);
         if (chat) {
             chat.messageCount = (chat.messageCount || 0) + 1;
             chat.lastMessage = `[${type}]`;
             chat.updatedAt = Date.now();
             await Store.put(Store.STORES.chats, chat);
-        }
-
-        clearReply();
+        }clearReply();
         await loadMessages();showToast('已发送');
     }
 
-    /* ---- 表情包面板 ---- */
+    /* ---- 表情包面板（聊天内） ---- */
     async function toggleStickerPanel() {
         stickerPanelOpen = !stickerPanelOpen;
-        const container = document.getElementById('sticker-panel-container');
-        if (!container) return;
+        const inputArea = document.getElementById('chat-input-area');
+        if (!inputArea) return;
 
-        if (!stickerPanelOpen) {
-            container.innerHTML = '';
-            return;
-        }
+        // Remove existing panel
+        const existing = inputArea.querySelector('.sticker-panel');
+        if (existing) { existing.remove(); stickerPanelOpen = false; return; }
+        if (!stickerPanelOpen) return;
 
         const stickers = await Store.getSetting('sticker_packs', []);
+
+        const panel = document.createElement('div');
+        panel.className = 'sticker-panel';
+
+        let panelHtml = `<div class="sticker-panel-header">
+            <span class="sticker-panel-title">表情包</span>
+            <button class="sticker-panel-close" onclick="ChatApp.toggleStickerPanel()">✕</button>
+        </div>`;
+
         if (stickers.length === 0) {
-            container.innerHTML = `<div class="sticker-panel"><div class="chat-empty-state"><div class="chat-empty-icon">🎨</div><div class="chat-empty-text">暂无表情包，请在表情 Tab 中添加</div></div></div>`;
-            return;
+            panelHtml += `<div class="sticker-panel-grid"><div class="sticker-panel-empty">暂无表情包<br>在＋菜单中管理表情包</div></div>`;
+        } else {
+            panelHtml += '<div class="sticker-panel-grid">';
+            stickers.forEach((s, i) => {
+                panelHtml += `<div class="sticker-panel-item" data-sticker-send="${i}">
+                    <img src="${escapeHtml(s.url)}" alt="${escapeHtml(s.desc)}" onerror="this.style.display='none';this.parentElement.insertAdjacentHTML('afterbegin','<div style=\\'font-size:10px;color:var(--text-tertiary);text-align:center\\'>❌</div>')">
+                </div>`;
+            });
+            panelHtml += '</div>';
         }
 
-        let html = '<div class="sticker-panel"><div class="sticker-grid">';
-        stickers.forEach((s, i) => {
-            html += `<div class="sticker-item" data-sticker-send="${i}">
-                <img src="${escapeHtml(s.url)}" alt="${escapeHtml(s.desc)}" onerror="this.parentElement.innerHTML='<div style=\\'padding:20px;text-align:center;font-size:11px;color:var(--text-tertiary)\\'>❌</div>'">
-                <div class="sticker-item-desc">${escapeHtml(s.desc)}</div>
-            </div>`;
-        });
-        html += '</div></div>';
-        container.innerHTML = html;
+        panel.innerHTML = panelHtml;
+        inputArea.appendChild(panel);
 
-        container.querySelectorAll('[data-sticker-send]').forEach(el => {
+        panel.querySelectorAll('[data-sticker-send]').forEach(el => {
             el.addEventListener('click', async () => {
                 const idx = parseInt(el.dataset.stickerSend);
                 const s = stickers[idx];
                 if (!s) return;
                 await saveSpecialMessage('sticker', s.desc, { url: s.url, description: s.desc });
                 stickerPanelOpen = false;
-                container.innerHTML = '';
+                panel.remove();
             });
-        });
-    }
-
-    /* ---- 添加表情包 ---- */
-    function addSticker() {
-        Phone.showModal({
-            title: '添加表情包',
-            content: `
-                <div class="form-group">
-                    <label class="form-label">图片 URL</label>
-                    <input class="form-input" id="sticker-new-url" placeholder="https://...">
-                </div>
-                <div class="form-group" style="margin-bottom:0">
-                    <label class="form-label">描述（AI 用来理解表情含义）</label>
-                    <input class="form-input" id="sticker-new-desc" placeholder="例：开心的猫猫表情">
-                </div>`,
-            actions: [
-                { label: '取消', type: 'secondary' },
-                { label: '添加', type: 'primary', onClick: async () => {
-                    const url = document.getElementById('sticker-new-url').value.trim();
-                    const desc = document.getElementById('sticker-new-desc').value.trim();
-                    if (!url) { showToast('请输入图片 URL'); return; }
-                    if (!desc) { showToast('请输入描述'); return; }
-                    const stickers = await Store.getSetting('sticker_packs', []);
-                    stickers.push({ url, desc });
-                    await Store.setSetting('sticker_packs', stickers);
-                    showToast('表情已添加');
-                    await refreshListBody();
-                }}
-            ]
         });
     }
 
@@ -1848,7 +1541,7 @@ const ChatApp = (() => {
         if (summaries.length === 0) {
             content = '<div style="text-align:center;color:var(--text-tertiary);padding:20px">暂无总结（每30条消息自动生成）</div>';
         } else {
-            content = summaries.map((s, i) => `
+            content = summaries.map(s => `
                 <div class="summary-card">
                     <div class="summary-header">
                         <span class="summary-range">消息 ${s.messageRange?.from || 0} - ${s.messageRange?.to || 0}</span>
@@ -1902,8 +1595,11 @@ const ChatApp = (() => {
                 <div class="summary-card">
                     <div class="summary-header">
                         <span style="font-weight:600;color:var(--text-primary)">${escapeHtml(c?.name || '角色')} 的日记</span>
+                        <div class="summary-actions">
+                            <button class="summary-action-btn" onclick="ChatApp.editDiary('${cid}')">编辑</button>
+                        </div>
                     </div>
-                    <div class="summary-content">${diary ? escapeHtml(diary.content) : '<span style="color:var(--text-tertiary)">暂无日记</span>'}</div>
+                    <div class="summary-content">${diary ? escapeHtml(diary.content) : '<span style="color:var(--text-tertiary)">暂无日记（AI 会在聊天中自动记录）</span>'}</div>
                 </div>`;
         }
 
@@ -1916,13 +1612,110 @@ const ChatApp = (() => {
         });
     }
 
+    async function editDiary(charId) {
+        const diaries = await Store.getAllByIndex(Store.STORES.diaries, 'charId', charId);
+        const diary = diaries[0];
+        Phone.closeModal();
+        setTimeout(() => {
+            Phone.showModal({
+                title: '编辑日记',
+                content: `<textarea class="form-textarea" id="diary-edit-content" rows="10" style="min-height:200px">${escapeHtml(diary?.content || '')}</textarea>`,
+                actions: [
+                    { label: '取消', type: 'secondary', onClick: () => openDiaryView() },
+                    { label: '保存', type: 'primary', onClick: async () => {
+                        const content = document.getElementById('diary-edit-content').value;
+                        if (diary) {
+                            diary.content = content;
+                            diary.updatedAt = Date.now();
+                            await Store.put(Store.STORES.diaries, diary);
+                        } else {
+                            await Store.put(Store.STORES.diaries, {
+                                id: 'diary_' + charId, charId, content, updatedAt: Date.now()
+                            });
+                        }
+                        showToast('日记已保存');
+                        openDiaryView();
+                    }}
+                ]
+            });
+        }, 350);
+    }
+
     async function openCharInfoFromChat() {
         const chat = await Store.get(Store.STORES.chats, currentChatId);
         if (!chat || !chat.characterIds?.length) {
             showToast('此会话无角色');
             return;
         }
-        openCharEditor(chat.characterIds[0]);
+        const charId = chat.characterIds[0];
+        const char = await Store.get(Store.STORES.characters, charId);
+        if (!char) return;
+
+        const allKB = await Store.getAll(Store.STORES.knowledgeBooks);
+
+        Phone.showModal({
+            title: '编辑角色',
+            content: `
+            <div class="char-form">
+                <div class="char-avatar-picker">
+                    <div class="char-avatar-preview" id="char-avatar-preview">
+                        ${char.avatar ? `<img src="${escapeHtml(char.avatar)}" alt="" style="width:100%;height:100%;object-fit:cover">` : '👤'}
+                    </div>
+                    <div style="flex:1">
+                        <div class="form-group" style="margin-bottom:0">
+                            <label class="form-label">头像 URL</label>
+                            <input class="form-input" id="char-avatar" value="${escapeHtml(char.avatar)}" placeholder="https://..." oninput="document.getElementById('char-avatar-preview').innerHTML=this.value?'<img src=\\''+this.value+'\\' alt=\\\"\\\" style=\\'width:100%;height:100%;object-fit:cover\\'>':'👤'">
+                        </div></div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">名称</label>
+                    <input class="form-input" id="char-name" value="${escapeHtml(char.name)}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">人设描述</label>
+                    <textarea class="form-textarea" id="char-persona" rows="5">${escapeHtml(char.persona)}</textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">角色专属提示词</label>
+                    <textarea class="form-textarea" id="char-prompt" rows="3">${escapeHtml(char.globalPrompt)}</textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">绑定知识书</label>
+                    <div id="char-kb-list" style="display:flex;flex-direction:column;gap:6px">
+                        ${allKB.map(kb => `
+                            <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary)">
+                                <input type="checkbox" value="${kb.id}" ${char.knowledgeBooks?.includes(kb.id) ? 'checked' : ''}>
+                                ${escapeHtml(kb.name)}
+                            </label>`).join('') || '<div style="font-size:12px;color:var(--text-tertiary)">暂无知识书</div>'}
+                    </div>
+                </div>
+                <div class="form-group" style="margin-bottom:0">
+                    <label class="form-label">自定义气泡 CSS</label>
+                    <textarea class="form-textarea" id="char-css" rows="3" placeholder=".chat-bubble { background:}">${escapeHtml(char.customCSS)}</textarea>
+                </div></div>`,
+            actions: [
+                { label: '取消', type: 'secondary' },
+                { label: '保存', type: 'primary', onClick: async () => {
+                    char.name = document.getElementById('char-name').value.trim() || char.name;
+                    char.avatar = document.getElementById('char-avatar').value.trim();
+                    char.persona = document.getElementById('char-persona').value.trim();
+                    char.globalPrompt = document.getElementById('char-prompt').value.trim();
+                    char.customCSS = document.getElementById('char-css').value.trim();
+                    char.knowledgeBooks = [];
+                    document.querySelectorAll('#char-kb-list input[type="checkbox"]:checked').forEach(cb => {
+                        char.knowledgeBooks.push(cb.value);
+                    });
+                    await Store.put(Store.STORES.characters, char);
+                    // Update chat name
+                    const chat = await Store.get(Store.STORES.chats, currentChatId);
+                    if (chat && chat.type === 'single') {
+                        chat.name = char.name;
+                        await Store.put(Store.STORES.chats, chat);
+                    }
+                    showToast('角色已保存');
+                }}
+            ]
+        });
     }
 
     async function clearChatMessages() {
@@ -1932,6 +1725,7 @@ const ChatApp = (() => {
             actions: [
                 { label: '取消', type: 'secondary' },
                 { label: '清空', type: 'primary', onClick: async () => {
+                    showToast('正在清空...');
                     const msgs = await Store.getAllByIndex(Store.STORES.messages, 'chatId', currentChatId);
                     for (const m of msgs) await Store.del(Store.STORES.messages, m.id);
                     const sums = await Store.getAllByIndex(Store.STORES.summaries, 'chatId', currentChatId);
@@ -1953,11 +1747,7 @@ const ChatApp = (() => {
     /* ---- 工具 ---- */
     function scrollToBottom() {
         const container = document.getElementById('chat-messages');
-        if (container) {
-            requestAnimationFrame(() => {
-                container.scrollTop = container.scrollHeight;
-            });
-        }
+        if (container) requestAnimationFrame(() => { container.scrollTop = container.scrollHeight; });
     }
 
     function showToast(text) {
@@ -1974,28 +1764,10 @@ const ChatApp = (() => {
 
     /* ======== 公开API ======== */
     return {
-        render,
-        init,
-        // List actions
-        backToList,
-        addSticker,
-        createKnowledgeBook,
-        // Chat actions
-        exitChat,
-        sendSilent,
-        sendAndTrigger,
-        sendSpecialMsg,
-        toggleStickerPanel,
-        openChatMenu,
-        clearReply,
-        retryLastResponse,
-        // Knowledge book
-        addKBEntry,
-        removeKBEntry,
-        toggleKBEntry,
-        saveKBEntry,
-        // Summary
-        editSummary
+        render, init,
+        backToList, addSticker, createKnowledgeBook, openKnowledgeManager, openStickerManager,
+        exitChat, sendSilent, sendAndTrigger, sendSpecialMsg, toggleStickerPanel, openChatMenu, clearReply, retryLastResponse,
+        addKBEntry, removeKBEntry, toggleKBEntry, saveKBEntry,
+        editSummary, editDiary, openPromptSettings
     };
 })();
-// [END ChatApp]
