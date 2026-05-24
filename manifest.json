@@ -1,0 +1,23 @@
+{
+  "name": "IPHONEEX - 虚拟掌机",
+  "short_name": "IPHONEEX",
+  "description": "一个运行在浏览器中的拟物化虚拟智能手机 PWA",
+  "start_url": "/IPHONEEX/",
+  "scope": "/IPHONEEX/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#1a1a2e",
+  "background_color": "#0f0f1a",
+  "icons": [
+    {
+      "src": "assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
