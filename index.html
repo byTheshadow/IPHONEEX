@@ -1,17 +1,20 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#1a1a2e" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>虚拟掌机</title>
+  <meta name="mobile-web-app-capable" content="yes" />
+
+  <title>IPHONEEX -虚拟掌机</title>
+
+  <!-- Favicon (内联 SVG，不需要外部文件) -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📱</text></svg>" />
 
   <!-- PWA Manifest -->
   <link rel="manifest" href="manifest.json" />
 
-  <!-- Global Styles -->
+  <!-- Styles -->
   <link rel="stylesheet" href="css/root.css" />
   <link rel="stylesheet" href="css/phone.css" />
   <link rel="stylesheet" href="css/desktop.css" />
@@ -19,10 +22,7 @@
 </head>
 <body>
 
-  <!-- ============================================================
-       手机外壳 (Phone Shell)
-       整个虚拟手机的最外层容器，模拟物理机身
-  ============================================================ -->
+  <!-- ============================================================手机外壳 (Phone Shell)============================================================ -->
   <div id="phone-shell" class="phone-shell" role="main" aria-label="虚拟手机">
 
     <!-- 顶部装饰：摄像头 + 扬声器 -->
@@ -31,82 +31,68 @@
       <div class="notch-speaker"></div>
     </div>
 
-    <!-- ── 状态栏 (Status Bar) ── -->
+    <!--── 状态栏 (Status Bar) ── -->
     <header id="status-bar" class="status-bar" role="banner" aria-label="状态栏">
       <span class="status-time" id="status-time" aria-live="polite">00:00</span>
       <div class="status-icons" aria-hidden="true">
-        <span class="status-icon icon-wifi">&#x1F4F6;</span>
+        <span class="status-icon icon-wifi">📶</span>
         <span class="status-icon icon-signal">4G</span>
         <span class="status-icon icon-battery" id="status-battery">🔋</span>
       </div>
     </header>
 
-    <!-- ── 屏幕主体 (Screen Body) ── -->
+    <!-- ──屏幕主体 (Screen Body) ── -->
     <div id="screen" class="screen">
 
       <!-- 星空背景粒子层 -->
       <canvas id="starfield-canvas" class="starfield-canvas" aria-hidden="true"></canvas>
 
-      <!-- ── 桌面滑动容器 (Desktop Slider) ── -->
-      <!-- 左右滑动切换不同桌面页 -->
+      <!--── 桌面滑动容器 (Desktop Slider) ── -->
       <div id="desktop-slider" class="desktop-slider" role="region" aria-label="桌面">
 
-        <!-- 桌面页 0：Widget 主页 -->
+        <!-- 桌面页0 -->
         <div class="desktop-page" id="desktop-page-0" data-page="0">
-          <!-- Widget 区域，由 desktopApp.js 动态注入 -->
           <div class="widget-grid" id="widget-grid-0" role="list" aria-label="小组件"></div>
-          <!-- 应用图标网格 -->
           <div class="app-icon-grid" id="app-icon-grid-0" role="list" aria-label="应用图标"></div>
         </div>
 
-        <!-- 桌面页 1：更多 Widget -->
+        <!-- 桌面页 1 -->
         <div class="desktop-page" id="desktop-page-1" data-page="1">
           <div class="widget-grid" id="widget-grid-1" role="list" aria-label="小组件"></div>
           <div class="app-icon-grid" id="app-icon-grid-1" role="list" aria-label="应用图标"></div>
-        </div>
+        </div></div>
 
-      </div>
+      <!-- ──桌面分页指示器 ── -->
+      <div id="page-indicator" class="page-indicator" role="tablist" aria-label="桌面页码"></div>
 
-      <!-- ── 桌面分页指示器 ── -->
-      <div id="page-indicator" class="page-indicator" role="tablist" aria-label="桌面页码">
-        <!-- 由 desktopApp.js 动态生成 dot -->
-      </div>
-
-      <!-- ── App 视图层 (App View Layer) ── -->
-      <!-- 所有 App 以 overlay 形式叠加在桌面上方，通过 CSS class 控制显隐 -->
-      <div id="app-layer" class="app-layer" aria-live="polite">
-
-        <!-- 聊天 App -->
-        <section id="app-chat" class="app-view" data-app="chat" aria-label="聊天" hidden>
+      <!-- ── App 视图层── -->
+      <div id="app-layer" class="app-layer" aria-live="polite"><section id="app-chat" class="app-view" data-app="chat" aria-label="聊天" hidden>
           <div class="app-header">
-            <button class="btn-back" aria-label="返回桌面">&#8592;</button>
+            <button class="btn-back" aria-label="返回桌面">←</button>
             <h2 class="app-title">消息</h2>
           </div>
           <div class="app-content" id="chat-content"></div>
         </section>
 
-        <!-- 日历 App -->
         <section id="app-calendar" class="app-view" data-app="calendar" aria-label="日历" hidden>
           <div class="app-header">
-            <button class="btn-back" aria-label="返回桌面">&#8592;</button>
+            <button class="btn-back" aria-label="返回桌面">←</button>
             <h2 class="app-title">日历</h2>
           </div>
           <div class="app-content" id="calendar-content"></div>
         </section>
 
-        <!-- 朋友圈 App -->
         <section id="app-moments" class="app-view" data-app="moments" aria-label="朋友圈" hidden>
           <div class="app-header">
-            <button class="btn-back" aria-label="返回桌面">&#8592;</button>
+            <button class="btn-back" aria-label="返回桌面">←</button>
             <h2 class="app-title">朋友圈</h2>
           </div>
           <div class="app-content" id="moments-content"></div>
         </section>
 
-        <!-- 设置 App -->
         <section id="app-settings" class="app-view" data-app="settings" aria-label="设置" hidden>
           <div class="app-header">
-            <button class="btn-back" aria-label="返回桌面">&#8592;</button>
+            <button class="btn-back" aria-label="返回桌面">←</button>
             <h2 class="app-title">设置</h2>
           </div>
           <div class="app-content" id="settings-content"></div>
@@ -114,19 +100,17 @@
 
       </div>
 
-      <!-- ── 系统通知横幅 (Notification Banner) ── -->
+      <!-- ── 系统通知横幅 ── -->
       <div id="notification-banner" class="notification-banner" role="alert" aria-live="assertive" aria-atomic="true" hidden>
         <img class="notif-avatar" id="notif-avatar" src="" alt="" />
         <div class="notif-body">
           <span class="notif-name" id="notif-name"></span>
           <span class="notif-text" id="notif-text"></span>
-        </div>
-      </div>
+        </div></div>
 
     </div>
-    <!-- /screen -->
 
-    <!-- ── Dock 栏 (Bottom Dock) ── -->
+    <!-- ── Dock 栏 ── -->
     <nav id="dock" class="dock" role="navigation" aria-label="Dock 快捷栏">
       <button class="dock-item" data-app="chat" aria-label="聊天">
         <span class="dock-icon">💬</span>
@@ -139,17 +123,15 @@
       </button>
       <button class="dock-item" data-app="moments" aria-label="朋友圈">
         <span class="dock-icon">🌸</span>
-      </button>
-    </nav>
+      </button></nav>
 
     <!-- 底部 Home 指示条 -->
     <div class="phone-home-indicator" aria-hidden="true"></div>
 
   </div>
-  <!-- /phone-shell -->
 
   <!-- ============================================================
-       全局 Loading 遮罩 (首次启动 / 数据加载中)
+       全局 Loading遮罩
   ============================================================ -->
   <div id="loading-screen" class="loading-screen" role="status" aria-label="加载中">
     <div class="loading-logo">📱</div>
@@ -158,10 +140,9 @@
   </div>
 
   <!-- ============================================================
-       第三方库 (CDN，无构建工具)
+       localForage（本地文件，避免 CDN 被追踪保护拦截）
   ============================================================ -->
-  <!-- localForage：IndexedDB 轻量封装 -->
-  <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>
+  <script src="libs/localforage.min.js"></script>
 
   <!-- ============================================================
        主入口 (ES Module)
