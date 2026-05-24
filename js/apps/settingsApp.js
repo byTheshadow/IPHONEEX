@@ -369,7 +369,7 @@ function showAvatarPicker() {
   modal.className = 'widget-editor-modal';
   modal.innerHTML = `
     <div class="we-header">
-      <h3class="we-title">👤 设置头像</h3>
+      <h3 class="we-title">👤 设置头像</h3>
       <button class="we-close" aria-label="关闭">✕</button>
     </div>
     <div class="we-body">
