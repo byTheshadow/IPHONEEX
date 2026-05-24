@@ -63,9 +63,11 @@ const Phone = (() => {
     function registerApps() {
         // Settings is already defined globally
         Router.register('settings', SettingsApp);
+        Router.register('chat', ChatApp);
+
 
         // Placeholder apps for Phase 2+
-        ['chat', 'calendar', 'academic', 'forum', 'moments'].forEach(id => {
+        ['calendar', 'academic', 'forum', 'moments'].forEach(id => {
             if (!Router.getApp(id)) {
                 const info = defaultApps.find(a => a.id === id);
                 Router.register(id, {
