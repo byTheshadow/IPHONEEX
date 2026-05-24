@@ -2,10 +2,12 @@
  * main.js — 应用主入口 & 初始化流程
  */
 
+// main.js 顶部 import
 import { db }from './core/db.js';
 import { eventBus } from './core/eventBus.js';
 import { engine }   from './core/engine.js';
 import { initDesktop, changeWallpaper } from './apps/desktopApp.js';
+import { initSettings } from './apps/settingsApp.js';
 
 // ── 常量 ──
 const TOTAL_PAGES= 2;
@@ -353,18 +355,16 @@ function closeAppView(appId) {
 // ================================================================
 //  8. 全局事件
 // ================================================================
+// bindGlobalEvents 完整版
 function bindGlobalEvents() {
-  // 通知横幅
   eventBus.on('notification:show', ({ avatar, name, text, appId }) => {
     showNotification(avatar, name, text, appId);
   });
 
-  // 主题切换
   eventBus.on('theme:change', ({ theme }) => {
     document.documentElement.setAttribute('data-theme', theme);
   });
 
-  // 小红点
   eventBus.on('badge:update', ({ appId, count }) => {
     const dockItem = document.querySelector(`.dock-item[data-app="${appId}"]`);
     if (!dockItem) return;
@@ -382,9 +382,13 @@ function bindGlobalEvents() {
     }
   });
 
-  // 壁纸更换事件（供设置页调用）
   eventBus.on('wallpaper:change', async ({ file }) => {
     await changeWallpaper(file);
+  });
+
+  // 设置页打开时初始化
+  eventBus.on('app:opened', ({ appId }) => {
+    if (appId === 'settings') initSettings();
   });
 }
 
