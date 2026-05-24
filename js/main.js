@@ -1,78 +1,85 @@
 /**
- * main.js — 应用主入口 & 初始化流程
+ * main.js — 应用主入口
  */
 
-// main.js 顶部 import
-import { db }from './core/db.js';
+import { db } from './core/db.js';
 import { eventBus } from './core/eventBus.js';
-import { engine }   from './core/engine.js';
+import { engine } from './core/engine.js';
 import { initDesktop, changeWallpaper } from './apps/desktopApp.js';
 import { initSettings } from './apps/settingsApp.js';
 
-// ── 常量 ──
-const TOTAL_PAGES= 2;
+const TOTAL_PAGES = 2;
 const SWIPE_THRESHOLD = 50;
 
-// ── 应用状态 ──
 const state = {
-  currentPage:  0,
-  activeApp:    null,
-  touchStartX:  0,
-  touchStartY:  0,
-  isSwiping:    false,
+  currentPage: 0,
+  activeApp: null,
+  touchStartX: 0,
+  touchStartY: 0,
+  isSwiping: false,
 };
 
-// ================================================================
-//入口
-// ================================================================
+//================================================================
 document.addEventListener('DOMContentLoaded', async () => {
-  try {
-    await bootstrap();
-  } catch (err) {
-    console.error('[main]启动失败:', err);
-    showFatalError(err);
-  }
+  try { await bootstrap(); }
+  catch (err) { console.error('[main]启动失败:', err); showFatalError(err); }
 });
 
-// ================================================================
-//  bootstrap
-// ================================================================
 async function bootstrap() {
   registerServiceWorker();
   await initDatabase();
   await applyUserTheme();
   initStatusBar();
   initStarfield();
-  await initDesktop();       // ← 渲染桌面 Widget
+  await initDesktop();
   initDesktopSlider();
   initRouter();
   engine.start();
   bindGlobalEvents();
   hideLoadingScreen();
-
-  // 暴露路由给desktopApp 的 App 图标使用
   window.__phoneRouter = { openApp };
 }
 
 // ================================================================
-//  1. Service Worker
+//  1. SW
 // ================================================================
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
-  navigator.serviceWorker
-    .register('./sw.js')
-    .then(reg => console.log('[SW] 注册成功, scope:', reg.scope))
-    .catch(err => console.warn('[SW] 注册失败:', err));
+  navigator.serviceWorker.register('./sw.js')
+    .then(r => console.log('[SW] 注册成功, scope:', r.scope))
+    .catch(e => console.warn('[SW] 注册失败:', e));
 }
 
 // ================================================================
-//  2. 数据库初始化
+//  2. DB初始化（扩展 profile 字段）
 // ================================================================
 async function initDatabase() {
-  const user = await db.user.get('profile');
+  let user = await db.user.get('profile');
   if (!user) {
-    await db.user.set('profile', {
-      name:'User', avatar: '', persona: '',api_key: '', theme: 'dark',});
+    user = {
+      name: 'User',
+      avatar: '',
+      persona: '',
+      social_name: '',
+      social_bio: '',
+      social_id: '',
+      api_base: '',
+      api_key: '',
+      api_model: '',
+      theme: 'dark',
+    };
+    await db.user.set('profile', user);
+  } else {
+    // 迁移：确保新字段存在
+    let dirty = false;
+    const defaults = {
+      social_name: '', social_bio: '', social_id: '',
+      api_base: '', api_model: '', persona: '', avatar: '',
+    };
+    for (const [k, v] of Object.entries(defaults)) {
+      if (!(k in user)) { user[k] = v; dirty = true; }
+    }
+    if (dirty) await db.user.set('profile', user);
   }
 
   const chars = await db.characters.getAll();
@@ -81,8 +88,7 @@ async function initDatabase() {
       id: 'char_001', name: '系统助理', avatar: '',
       system_prompt: '你是一个友善、简洁的智能助手。',
       first_message: '你好！有什么我可以帮你的吗？✨',
-      custom_css: '', is_bot: true,
-    });
+      custom_css: '', is_bot: true,});
   }
 }
 
@@ -91,8 +97,7 @@ async function initDatabase() {
 // ================================================================
 async function applyUserTheme() {
   const user = await db.user.get('profile');
-  const theme = user?.theme ?? 'dark';
-  document.documentElement.setAttribute('data-theme', theme);
+  document.documentElement.setAttribute('data-theme', user?.theme ?? 'dark');
 }
 
 // ================================================================
@@ -102,10 +107,10 @@ function initStatusBar() {
   updateClock();
   setInterval(updateClock, 1000);
   if ('getBattery' in navigator) {
-    navigator.getBattery().then(battery => {
-      updateBatteryUI(battery.level, battery.charging);
-      battery.addEventListener('levelchange', () => updateBatteryUI(battery.level, battery.charging));
-      battery.addEventListener('chargingchange', () => updateBatteryUI(battery.level, battery.charging));
+    navigator.getBattery().then(bat => {
+      updateBatteryUI(bat.level, bat.charging);
+      bat.addEventListener('levelchange', () => updateBatteryUI(bat.level, bat.charging));
+      bat.addEventListener('chargingchange', () => updateBatteryUI(bat.level, bat.charging));
     });
   }
 }
@@ -113,48 +118,45 @@ function initStatusBar() {
 function updateClock() {
   const el = document.getElementById('status-time');
   if (!el) return;
-  const now = new Date();
-  el.textContent = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  const n = new Date();
+  el.textContent = `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
 }
 
 function updateBatteryUI(level, charging) {
   const el = document.getElementById('status-battery');
   if (!el) return;
-  const pct = Math.round(level * 100);
-  el.textContent = charging ? `⚡${pct}%` : `🔋${pct}%`;
+  const p = Math.round(level * 100);
+  el.textContent = charging ? `⚡${p}%` : `🔋${p}%`;
 }
 
 // ================================================================
-//  5. 星空背景
+//  5. 星空
 // ================================================================
 function initStarfield() {
   const canvas = document.getElementById('starfield-canvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  let stars = [];
-  let animId = null;
+  let stars = [], animId = null;
 
   function resize() {
     canvas.width = canvas.offsetWidth;
     canvas.height = canvas.offsetHeight;const count = Math.floor((canvas.width * canvas.height) / 3000);
     stars = Array.from({ length: count }, () => ({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      r: Math.random() * 1.5 + 0.3,
-      alpha: Math.random(),speed: Math.random() * 0.008 + 0.002,
-      phase: Math.random() * Math.PI * 2,
+      x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+      r: Math.random() * 1.5 + 0.3, alpha: Math.random(),speed: Math.random() * 0.008 + 0.002, phase: Math.random() * Math.PI * 2,
     }));
   }
 
   function draw(ts) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    stars.forEach(s => {
+    for (const s of stars) {
       s.alpha =0.3 + 0.7 * Math.abs(Math.sin(ts * s.speed + s.phase));
       ctx.beginPath();
       ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(232, 224, 208, ${s.alpha})`;
+      ctx.fillStyle = `rgba(232,224,208,${s.alpha})`;
       ctx.fill();
-    });animId = requestAnimationFrame(draw);
+    }
+    animId = requestAnimationFrame(draw);
   }
 
   document.addEventListener('visibilitychange', () => {
@@ -163,19 +165,17 @@ function initStarfield() {
   });
 
   new ResizeObserver(resize).observe(canvas);
-  resize();
-  animId = requestAnimationFrame(draw);
+  resize();animId = requestAnimationFrame(draw);
 }
 
 // ================================================================
-//  6. 桌面滑动（触摸 + 鼠标 + 滚轮）
+//  6. 桌面滑动（触摸 + 鼠标拖拽 + 滚轮 + 键盘）
 // ================================================================
 function initDesktopSlider() {
-  const slider    = document.getElementById('desktop-slider');
+  const slider = document.getElementById('desktop-slider');
   const indicator = document.getElementById('page-indicator');
   if (!slider || !indicator) return;
 
-  // 分页指示器
   indicator.innerHTML = '';
   for (let i = 0; i < TOTAL_PAGES; i++) {
     const dot = document.createElement('button');
@@ -189,18 +189,17 @@ function initDesktopSlider() {
   }
   updatePageIndicator();
 
-  // ── 触摸事件 ──
+  // 触摸
   slider.addEventListener('touchstart', (e) => {
     state.touchStartX = e.touches[0].clientX;
-    state.touchStartY = e.touches[0].clientY;state.isSwiping = false;
+    state.touchStartY = e.touches[0].clientY;
+    state.isSwiping = false;
   }, { passive: true });
 
   slider.addEventListener('touchmove', (e) => {
     const dx = e.touches[0].clientX - state.touchStartX;
     const dy = e.touches[0].clientY - state.touchStartY;
-    if (!state.isSwiping && Math.abs(dx) > Math.abs(dy) && Math.abs(dx) >8) {
-      state.isSwiping = true;
-    }
+    if (!state.isSwiping && Math.abs(dx) > Math.abs(dy) && Math.abs(dx) >8) state.isSwiping = true;
   }, { passive: true });
 
   slider.addEventListener('touchend', (e) => {
@@ -211,78 +210,70 @@ function initDesktopSlider() {
     state.isSwiping = false;
   }, { passive: true });
 
-  // ── 鼠标拖拽（电脑端） ──
+  // 鼠标拖拽
   slider.addEventListener('mousedown', (e) => {
-    // 不拦截编辑器内的操作
     if (e.target.closest('.widget-editor-overlay')) return;
-
+    if (e.target.closest('.app-icon-item')) return;
     state.touchStartX = e.clientX;
     state.touchStartY = e.clientY;
-    state.isSwiping = false;
-    slider.style.cursor = 'grabbing';
+    state.isSwiping = false;slider.style.cursor = 'grabbing';
 
     const onMove = (ev) => {
       const dx = ev.clientX - state.touchStartX;
       const dy = ev.clientY - state.touchStartY;
-      if (!state.isSwiping && Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 8) {
-        state.isSwiping = true;
-      }
+      if (!state.isSwiping && Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 8) state.isSwiping = true;
     };
-
     const onUp = (ev) => {
       slider.style.cursor = '';
       if (state.isSwiping) {
         const dx = ev.clientX - state.touchStartX;
         if (dx < -SWIPE_THRESHOLD && state.currentPage < TOTAL_PAGES - 1) goToPage(state.currentPage + 1);
-        else if (dx > SWIPE_THRESHOLD && state.currentPage > 0) goToPage(state.currentPage - 1);
-      }
+        else if (dx > SWIPE_THRESHOLD && state.currentPage > 0) goToPage(state.currentPage - 1);}
       state.isSwiping = false;
       document.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseup', onUp);
     };
-
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup', onUp);
   });
 
-  // ── 鼠标滚轮横向翻页（电脑端） ──
+  // 滚轮
+  let wheelCooldown = false;
   slider.addEventListener('wheel', (e) => {
-    // 不拦截编辑器内的滚动
     if (e.target.closest('.widget-editor-overlay')) return;
-
-    // deltaX 横向滚动 或 deltaY 纵向滚动都支持翻页
+    if (wheelCooldown) return;
     const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
     if (Math.abs(delta) < 30) return;
-
     e.preventDefault();
+    wheelCooldown = true;
+    setTimeout(() => { wheelCooldown = false; }, 500);
     if (delta > 0 && state.currentPage < TOTAL_PAGES - 1) goToPage(state.currentPage + 1);
     else if (delta < 0 && state.currentPage > 0) goToPage(state.currentPage - 1);
   }, { passive: false });
 
-  // ── 键盘左右箭头（电脑端） ──
+  // 键盘
   document.addEventListener('keydown', (e) => {
-    if (state.activeApp) return; // App 打开时不响应
+    if (state.activeApp) return;
     if (e.key === 'ArrowRight' && state.currentPage < TOTAL_PAGES - 1) goToPage(state.currentPage + 1);
     if (e.key === 'ArrowLeft' && state.currentPage > 0) goToPage(state.currentPage - 1);
   });
 }
 
-function goToPage(pageIndex) {
-  if (pageIndex < 0 || pageIndex >= TOTAL_PAGES) return;
-  state.currentPage = pageIndex;
+function goToPage(idx) {
+  if (idx < 0 || idx >= TOTAL_PAGES) return;
+  state.currentPage = idx;
   const slider = document.getElementById('desktop-slider');
   if (slider) {
-    slider.style.transform = `translateX(${-(pageIndex * 100)}%)`;slider.style.transition = `transform var(--duration-page) var(--ease-smooth)`;
+    slider.style.transform = `translateX(${-(idx * 100)}%)`;slider.style.transition = `transform var(--duration-page) var(--ease-smooth)`;
   }
   updatePageIndicator();
-  eventBus.emit('desktop:pageChanged', { page: pageIndex });
+  eventBus.emit('desktop:pageChanged', { page: idx });
 }
 
 function updatePageIndicator() {
-  document.querySelectorAll('.page-dot').forEach((dot, i) => {
-    const active = i === state.currentPage;
-    dot.classList.toggle('active', active);
-    dot.setAttribute('aria-selected', active ? 'true' : 'false');
+  document.querySelectorAll('.page-dot').forEach((d, i) => {
+    const a = i === state.currentPage;
+    d.classList.toggle('active', a);d.setAttribute('aria-selected', a ? 'true' : 'false');
   });
 }
 
@@ -290,26 +281,14 @@ function updatePageIndicator() {
 //  7. 路由
 // ================================================================
 function initRouter() {
-  // Dock 按钮
   document.querySelectorAll('.dock-item[data-app]').forEach(btn => {
     btn.addEventListener('click', () => openApp(btn.dataset.app));
   });
-
-  // Home 按钮
   document.getElementById('btn-home')?.addEventListener('click', closeCurrentApp);
-
-  // App 内返回按钮
   document.querySelectorAll('.btn-back').forEach(btn => {
     btn.addEventListener('click', closeCurrentApp);
   });
-
-  // 浏览器后退
-  window.addEventListener('popstate', () => {
-    if (state.activeApp) closeCurrentApp();
-  });
-
-  // ESC 键关闭 App（电脑端）
-  document.addEventListener('keydown', (e) => {
+  window.addEventListener('popstate', () => { if (state.activeApp) closeCurrentApp(); });document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && state.activeApp) closeCurrentApp();
   });
 }
@@ -317,14 +296,12 @@ function initRouter() {
 function openApp(appId) {
   if (state.activeApp === appId) return;
   if (state.activeApp) closeAppView(state.activeApp);
-
-  const appView = document.querySelector(`.app-view[data-app="${appId}"]`);
-  if (!appView) return;
-
+  const v = document.querySelector(`.app-view[data-app="${appId}"]`);
+  if (!v) return;
   history.pushState({ app: appId }, '', `#${appId}`);
-  appView.hidden = false;
-  void appView.offsetHeight;
-  appView.classList.add('app-view--active');
+  v.hidden = false;
+  void v.offsetHeight;
+  v.classList.add('app-view--active');
   state.activeApp = appId;
   eventBus.emit('app:opened', { appId });
 }
@@ -338,24 +315,23 @@ function closeCurrentApp() {
 }
 
 function closeAppView(appId) {
-  const appView = document.querySelector(`.app-view[data-app="${appId}"]`);
-  if (!appView) return;
-  appView.classList.remove('app-view--active');
-  appView.classList.add('app-view--closing');
+  const v = document.querySelector(`.app-view[data-app="${appId}"]`);
+  if (!v) return;
+  v.classList.remove('app-view--active');
+  v.classList.add('app-view--closing');
   const onEnd = () => {
-    appView.classList.remove('app-view--closing');
-    appView.hidden = true;
-    appView.removeEventListener('transitionend', onEnd);
-    appView.removeEventListener('animationend', onEnd);
+    v.classList.remove('app-view--closing');
+    v.hidden = true;
+    v.removeEventListener('transitionend', onEnd);
+    v.removeEventListener('animationend', onEnd);
   };
-  appView.addEventListener('transitionend', onEnd, { once: true });
-  appView.addEventListener('animationend', onEnd, { once: true });setTimeout(onEnd, 450);
+  v.addEventListener('transitionend', onEnd, { once: true });
+  v.addEventListener('animationend', onEnd, { once: true });setTimeout(onEnd, 450);
 }
 
 // ================================================================
 //  8. 全局事件
 // ================================================================
-// bindGlobalEvents 完整版
 function bindGlobalEvents() {
   eventBus.on('notification:show', ({ avatar, name, text, appId }) => {
     showNotification(avatar, name, text, appId);
@@ -366,99 +342,70 @@ function bindGlobalEvents() {
   });
 
   eventBus.on('badge:update', ({ appId, count }) => {
-    const dockItem = document.querySelector(`.dock-item[data-app="${appId}"]`);
-    if (!dockItem) return;
-    let badge = dockItem.querySelector('.dock-badge');
+    const di = document.querySelector(`.dock-item[data-app="${appId}"]`);
+    if (!di) return;
+    let b = di.querySelector('.dock-badge');
     if (count > 0) {
-      if (!badge) {
-        badge = document.createElement('span');
-        badge.className = 'dock-badge';
-        dockItem.appendChild(badge);
-      }
-      badge.textContent = count > 99 ? '99+' : count;
-      badge.hidden = false;
-    } else if (badge) {
-      badge.hidden = true;
-    }
+      if (!b) { b = document.createElement('span'); b.className = 'dock-badge'; di.appendChild(b); }
+      b.textContent = count > 99 ? '99+' : count;
+      b.hidden = false;
+    } else if (b) { b.hidden = true; }
   });
 
-  eventBus.on('wallpaper:change', async ({ file }) => {
-    await changeWallpaper(file);
-  });
+  eventBus.on('wallpaper:change', async ({ file }) => { await changeWallpaper(file); });
 
-  // 设置页打开时初始化
+  // App 打开时初始化对应模块
   eventBus.on('app:opened', ({ appId }) => {
     if (appId === 'settings') initSettings();
   });
 }
 
 // ================================================================
-//  9. 通知横幅
+//  9. 通知
 // ================================================================
 function showNotification(avatar, name, text, appId) {
-  const banner = document.getElementById('notification-banner');
-  if (!banner) return;
-
+  const b = document.getElementById('notification-banner');
+  if (!b) return;
   document.getElementById('notif-avatar').src = avatar || '';
   document.getElementById('notif-name').textContent = name || '系统通知';
   document.getElementById('notif-text').textContent = text || '';
-
-  banner.hidden = false;
-  banner.classList.remove('notif--hide');
-  banner.classList.add('notif--show');
-
-  const clickHandler = () => {
-    hideNotification();
-    if (appId) openApp(appId);
-    banner.removeEventListener('click', clickHandler);
-  };
-  banner.addEventListener('click', clickHandler);
+  b.hidden = false;
+  b.classList.remove('notif--hide');
+  b.classList.add('notif--show');
+  const handler = () => { hideNotification(); if (appId) openApp(appId); b.removeEventListener('click', handler); };
+  b.addEventListener('click', handler);
   setTimeout(hideNotification, 4000);
 }
 
 function hideNotification() {
-  const banner = document.getElementById('notification-banner');
-  if (!banner || banner.hidden) return;
-  banner.classList.remove('notif--show');
-  banner.classList.add('notif--hide');
-  setTimeout(() => {
-    banner.hidden = true;
-    banner.classList.remove('notif--hide');
-  }, 350);
+  const b = document.getElementById('notification-banner');
+  if (!b || b.hidden) return;
+  b.classList.remove('notif--show');
+  b.classList.add('notif--hide');
+  setTimeout(() => { b.hidden = true; b.classList.remove('notif--hide'); }, 350);
 }
 
 // ================================================================
 //  10. Loading
 // ================================================================
 function hideLoadingScreen() {
-  const loading = document.getElementById('loading-screen');
-  if (!loading) return;
-  const fill = loading.querySelector('.loading-bar-fill');
-  if (fill) fill.style.animation = 'loadingBar 600ms var(--ease-out) forwards';
+  const l = document.getElementById('loading-screen');
+  if (!l) return;
+  const f = l.querySelector('.loading-bar-fill');
+  if (f) f.style.animation = 'loadingBar 600ms var(--ease-out) forwards';
   setTimeout(() => {
-    loading.style.opacity = '0';
-    loading.style.transition = `opacity var(--duration-slow) var(--ease-out)`;
-    setTimeout(() => {
-      loading.hidden = true;
-      loading.remove();
-      console.log('[main]✅ 虚拟掌机启动完成');
-    }, 450);
+    l.style.opacity = '0';
+    l.style.transition = `opacity var(--duration-slow) var(--ease-out)`;
+    setTimeout(() => { l.hidden = true; l.remove(); console.log('[main]✅ 虚拟掌机启动完成'); }, 450);
   }, 700);
 }
 
 function showFatalError(err) {
-  const loading = document.getElementById('loading-screen');
-  if (loading) {
-    const text = loading.querySelector('.loading-text');
-    if (text) {
-      text.textContent = `启动失败: ${err.message || err}`;
-      text.style.color = '#ff6b6b';
-    }
+  const l = document.getElementById('loading-screen');
+  if (l) {
+    const t = l.querySelector('.loading-text');
+    if (t) { t.textContent = `启动失败: ${err.message || err}`; t.style.color = '#ff6b6b'; }
   }
 }
 
-// ================================================================
-//  导出
-// ================================================================
 export { openApp, closeCurrentApp, goToPage, state };
-
