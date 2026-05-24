@@ -87,7 +87,7 @@ const Phone = (() => {
     }
 
     // ── 桌面渲染 ──────────────────────────────────────────
-    async function renderDesktop() {
+        async function renderDesktop() {
         const pagesContainer = document.getElementById('desktop-pages');
         const dotsContainer  = document.getElementById('page-dots');
         const dockInner      = document.getElementById('dock-inner');
@@ -99,71 +99,82 @@ const Phone = (() => {
                 { id: 'w_clock',  type: 'clock',    size: '2x2', page: 0, order: 0, data: {} },
                 { id: 'w_cal',    type: 'calendar',  size: '2x2', page: 0, order: 1, data: {} },
                 { id: 'w_status', type: 'status',    size: '4x2', page: 0, order: 2, data: { label: 'IPHONEEX', sub: '✦ AI Phone Simulator' } },
-                { id: 'w_memo',   type: 'memo',      size: '4x2', page: 0, order: 3, data: { title: '📝 备忘录', text: '长按小组件可以编辑，长按桌面可以添加新组件' } }
+                { id: 'w_memo',   type: 'memo',      size: '4x2', page: 0, order: 3, data: { title: '📝 备忘录', text: '长按小组件可编辑，长按桌面空白处可添加组件' } }
             ];
             for (const w of defaults) await Store.put(Store.STORES.widgets, w);
             widgets = defaults;
         }
 
+        // ── 把 widget 和 app icon 合并成统一的"桌面项目"列表 ──
+        // widget 用 order 排序，app icons 作为一个整体行追加在最后
         const desktopApps = defaultApps.filter(a => !dockAppIds.includes(a.id));
-        const pages = [{ widgets: widgets.filter(w => (w.page || 0) === 0), apps: desktopApps }];
-        totalPages = pages.length;
 
+        // 每页的 widget
+        const pageWidgets = widgets
+            .filter(w => (w.page || 0) === 0)
+            .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+        totalPages = 1;
         pagesContainer.innerHTML = '';
         dotsContainer.innerHTML  = '';
 
-        pages.forEach((page, pageIndex) => {
-            const pageEl = document.createElement('div');
-            pageEl.className = 'desktop-page';
+        const pageEl = document.createElement('div');
+        pageEl.className = 'desktop-page';
 
-            const sorted = [...page.widgets].sort((a, b) => (a.order || 0) - (b.order || 0));
+        // ── 混排：widget 按 size 分行，2x2 两个并排，4x2/4x4 独占一行 ──
+        let i = 0;
+        while (i < pageWidgets.length) {
+            const w    = pageWidgets[i];
+            const size = w.size || Widget.types[w.type]?.defaultSize || '2x2';
+            const row  = document.createElement('div');
+            row.className = 'desktop-row';
 
-            let i = 0;
-            while (i < sorted.length) {
-                const w    = sorted[i];
-                const size = w.size || Widget.types[w.type]?.defaultSize || '2x2';
-                const row  = document.createElement('div');
-                row.className = 'desktop-row';
+            if (size === '4x2' || size === '4x4') {
+                const wEl = Widget.create(w);
+                if (wEl) row.appendChild(wEl);
+                pageEl.appendChild(row);
+                i++;
+            } else {
+                // 2x2：尝试和下一个 2x2 并排
+                const wEl = Widget.create(w);
+                if (wEl) row.appendChild(wEl);
 
-                if (size === '4x2' || size === '4x4') {
-                    const wEl = Widget.create(w);
-                    if (wEl) row.appendChild(wEl);
-                    pageEl.appendChild(row);
-                    i++;
-                } else {
-                    // 2x2：尝试两个并排
-                    const wEl = Widget.create(w);
-                    if (wEl) row.appendChild(wEl);
-
-                    if (i + 1 < sorted.length) {
-                        const next     = sorted[i + 1];
-                        const nextSize = next.size || Widget.types[next.type]?.defaultSize || '2x2';
-                        if (nextSize === '2x2') {
-                            const wEl2 = Widget.create(next);
-                            if (wEl2) row.appendChild(wEl2);
-                            i++;
-                        }
+                if (i + 1 < pageWidgets.length) {
+                    const next     = pageWidgets[i + 1];
+                    const nextSize = next.size || Widget.types[next.type]?.defaultSize || '2x2';
+                    if (nextSize === '2x2') {
+                        const wEl2 = Widget.create(next);
+                        if (wEl2) row.appendChild(wEl2);
+                        i++;
                     }
-                    pageEl.appendChild(row);
-                    i++;
                 }
+                pageEl.appendChild(row);
+                i++;
             }
+        }
 
-            if (page.apps?.length > 0) {
+        // ── App 图标混排在 widget 之后，每行最多 4 个 ──────────
+        if (desktopApps.length > 0) {
+            const ICONS_PER_ROW = 4;
+            for (let r = 0; r < desktopApps.length; r += ICONS_PER_ROW) {
                 const iconsRow = document.createElement('div');
                 iconsRow.className = 'app-icons-row';
-                page.apps.forEach(app => iconsRow.appendChild(createAppIcon(app)));
+                desktopApps.slice(r, r + ICONS_PER_ROW).forEach(app => {
+                    iconsRow.appendChild(createAppIcon(app));
+                });
                 pageEl.appendChild(iconsRow);
             }
+        }
 
-            pagesContainer.appendChild(pageEl);
+        pagesContainer.appendChild(pageEl);
 
-            const dot = document.createElement('div');
-            dot.className = `page-dot ${pageIndex === currentPage ? 'active' : ''}`;
-            dot.addEventListener('click', () => goToPage(pageIndex));
-            dotsContainer.appendChild(dot);
-        });
+        // Page dot
+        const dot = document.createElement('div');
+        dot.className = 'page-dot active';
+        dot.addEventListener('click', () => goToPage(0));
+        dotsContainer.appendChild(dot);
 
+        // Dock
         dockInner.innerHTML = '';
         dockAppIds.forEach(id => {
             const info = defaultApps.find(a => a.id === id);
