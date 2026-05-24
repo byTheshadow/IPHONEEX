@@ -1,0 +1,172 @@
+/* ================================================================
+   desktop.css — 桌面滑动器、Widget 小组件、分页指示器
+================================================================ */
+
+/* ── 桌面滑动容器 ── */
+.desktop-slider {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-desktop);
+  display: flex;
+  width: 200%; /* 2 页× 100% */
+  transform: translateX(0%);
+  transition: transform var(--duration-page) var(--ease-smooth);
+  will-change: transform;
+}
+
+.desktop-page {
+  width: 50%; /* 每页占容器的 50% =屏幕的 100% */
+  height: 100%;
+  padding: 16px 16px 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* ── Widget 网格 ── */
+.widget-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/*通用 Widget 卡片 */
+.widget-card {
+  position: relative;
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  background: var(--bg-widget);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  box-shadow: var(--shadow-widget);
+  overflow: hidden;
+  transition: transform var(--duration-fast) var(--ease-spring);
+}
+
+.widget-card:active {
+  transform: scale(0.97);
+}
+
+/* Widget尺寸变体 */
+.widget-card--small {
+  grid-column: span 1;
+  min-height: 80px;
+}
+
+.widget-card--medium {
+  grid-column: span 1;
+  min-height: 160px;
+}
+
+.widget-card--large {
+  grid-column: span 2;
+  min-height: 120px;
+}
+
+/* Widget 内部文字 */
+.widget-label {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.widget-value {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.widget-sub {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+/* Widget 头像 */
+.widget-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius:50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  margin: 0 auto 8px;display: block;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ── 应用图标网格 ── */
+.app-icon-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px 12px;
+  padding: 8px 0;
+}
+
+.app-icon-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.app-icon-item__icon {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-md);
+  background: var(--bg-widget);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  box-shadow: var(--shadow-app-icon);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  transition: transform var(--duration-fast) var(--ease-spring);
+}
+
+.app-icon-item:active .app-icon-item__icon {
+  transform: scale(0.85);
+}
+
+.app-icon-item__label {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  text-align: center;
+  max-width: 64px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── 分页指示器 ── */
+.page-indicator {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-widget);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.page-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: all var(--duration-normal) var(--ease-smooth);
+}
+
+.page-dot.active {
+  width: 20px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.75);
+}
