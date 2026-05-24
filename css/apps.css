@@ -1,0 +1,131 @@
+/* ================================================================
+   apps.css — 各App 内部样式（聊天、日历、朋友圈、设置）第二阶段逐步填充，当前为通用骨架
+================================================================ */
+
+/* ── 通用：空状态占位 ── */
+.app-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 12px;
+  color: var(--text-muted);
+}
+
+.app-empty__icon {
+  font-size: 48px;
+  opacity: 0.5;
+}
+
+.app-empty__text {
+  font-size: var(--font-size-sm);
+}
+
+/* ── 聊天App骨架 ── */
+#chat-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-list-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: background var(--duration-fast);
+}
+
+.chat-list-item:active {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.chat-list-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.chat-list-info {
+  flex: 1;min-width: 0;
+}
+
+.chat-list-name {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: var(--text-on-app);
+}
+
+.chat-list-preview {
+  font-size: var(--font-size-sm);
+  color: var(--text-on-app-sub);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── 日历 App 骨架 ── */
+#calendar-content {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── 朋友圈 App 骨架 ── */
+#moments-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.moment-card {
+  background: #fff;
+  border-radius: var(--radius-md);
+  padding: 16px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+/* ── 设置 App 骨架 ── */
+#settings-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-group {
+  background: #fff;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.settings-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: background var(--duration-fast);
+}
+
+.settings-item:last-child {
+  border-bottom: none;
+}
+
+.settings-item:active {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.settings-item__label {
+  font-size: var(--font-size-md);
+  color: var(--text-on-app);
+}
+
+.settings-item__value {
+  font-size: var(--font-size-sm);
+  color: var(--text-on-app-sub);
+}
