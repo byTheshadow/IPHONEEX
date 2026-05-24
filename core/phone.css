@@ -998,3 +998,80 @@
     font-size: 14px;
     color: var(--text-secondary);
 }
+/* ── 添加小组件列表 ──────────────────────────────────── */
+.add-widget-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 340px;
+    overflow-y: auto;
+}
+
+.add-widget-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 13px 16px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border-light);
+    border-radius: var(--glass-radius-xs);
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.add-widget-item:active {
+    transform: scale(0.97);
+    background: var(--glass-bg-heavy);
+}
+
+.add-widget-label {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.add-widget-size {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    background: var(--glass-bg-heavy);
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+
+/* ── 全局 Toast ───────────────────────────────────────── */
+.phone-toast {
+    position: absolute;
+    bottom: 110px;
+    left: 50%;
+    transform: translateX(-50%) translateY(8px);
+    background: rgba(28, 28, 30, 0.92);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 9px 20px;
+    border-radius: 20px;
+    white-space: nowrap;
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.22s ease, transform 0.22s ease;
+    pointer-events: none;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="light"] .phone-toast {
+    background: rgba(255, 255, 255, 0.94);
+    color: #111;
+    border-color: rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+}
+
+.phone-toast.phone-toast-show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+

@@ -8,16 +8,17 @@ const Phone = (() => {
     let isMouseDown = false;
 
     const defaultApps = [
-        { id: 'chat', name: '聊天', icon: '💬', color: 'rgba(255,255,255,0.08)' },
-        { id: 'calendar', name: '日历', icon: '📅', color: 'rgba(255,255,255,0.08)' },
-        { id: 'academic', name: '学术', icon: '📚', color: 'rgba(255,255,255,0.08)' },
-        { id: 'forum', name: '论坛', icon: '🏛️', color: 'rgba(255,255,255,0.08)' },
-        { id: 'moments', name: '朋友圈', icon: '◐', color: 'rgba(255,255,255,0.08)' },
-        { id: 'settings', name: '设置', icon: '⚙️', color: 'rgba(255,255,255,0.08)' }
+        { id: 'chat',     name: '聊天',   icon: '💬', color: 'rgba(255,255,255,0.08)' },
+        { id: 'calendar', name: '日历',   icon: '📅', color: 'rgba(255,255,255,0.08)' },
+        { id: 'academic', name: '学术',   icon: '📚', color: 'rgba(255,255,255,0.08)' },
+        { id: 'forum',    name: '论坛',   icon: '🏛️', color: 'rgba(255,255,255,0.08)' },
+        { id: 'moments',  name: '朋友圈', icon: '◐',  color: 'rgba(255,255,255,0.08)' },
+        { id: 'settings', name: '设置',   icon: '⚙️', color: 'rgba(255,255,255,0.08)' }
     ];
 
     const dockAppIds = ['chat', 'calendar', 'settings'];
 
+    // ── 启动 ──────────────────────────────────────────────
     async function init() {
         Logger.info('Phone booting...');
         await Store.init();
@@ -27,11 +28,11 @@ const Phone = (() => {
         registerApps();
         await renderDesktop();
         setupSwipe();
+        setupDesktopLongPress();
         Widget.startUpdates();
         updateStatusTime();
         setInterval(updateStatusTime, 1000);
 
-        // Register service worker
         if ('serviceWorker' in navigator) {
             try {
                 await navigator.serviceWorker.register('./sw.js');
@@ -39,7 +40,6 @@ const Phone = (() => {
                 Logger.warn('SW registration failed', e.message);
             }
         }
-
         Logger.info('Phone boot complete');
     }
 
@@ -56,17 +56,15 @@ const Phone = (() => {
         if (wpUrl) {
             const img = document.getElementById('wallpaper-custom');
             img.src = wpUrl;
-            img.classList.remove('hidden');document.getElementById('wallpaper-default').classList.add('hidden');
+            img.classList.remove('hidden');
+            document.getElementById('wallpaper-default').classList.add('hidden');
         }
     }
 
     function registerApps() {
-        // Settings is already defined globally
         Router.register('settings', SettingsApp);
         Router.register('chat', ChatApp);
 
-
-        // Placeholder apps for Phase 2+
         ['calendar', 'academic', 'forum', 'moments'].forEach(id => {
             if (!Router.getApp(id)) {
                 const info = defaultApps.find(a => a.id === id);
@@ -80,7 +78,7 @@ const Phone = (() => {
                         <div class="app-body" style="display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px">
                             <div style="font-size:56px;opacity:0.3">${info?.icon || '📱'}</div>
                             <div style="font-size:16px;color:var(--text-secondary);font-weight:500">即将推出</div>
-                <div style="font-size:13px;color:var(--text-tertiary)">Phase 2+ 开发中</div>
+                            <div style="font-size:13px;color:var(--text-tertiary)">Phase 2+ 开发中</div>
                         </div>`,
                     init: () => {}
                 });
@@ -88,65 +86,57 @@ const Phone = (() => {
         });
     }
 
+    // ── 桌面渲染 ──────────────────────────────────────────
     async function renderDesktop() {
         const pagesContainer = document.getElementById('desktop-pages');
-        const dotsContainer = document.getElementById('page-dots');
-        const dockInner = document.getElementById('dock-inner');
+        const dotsContainer  = document.getElementById('page-dots');
+        const dockInner      = document.getElementById('dock-inner');
 
         let widgets = await Store.getAll(Store.STORES.widgets);
 
-        // Default widgets on first run
         if (widgets.length === 0) {
             const defaults = [
-                { id: 'w_clock', type: 'clock', size: '2x2', page: 0, order: 0, data: {} },
-                { id: 'w_cal', type: 'calendar', size: '2x2', page: 0, order: 1, data: {} },
-                { id: 'w_status', type: 'status', size: '4x2', page: 0, order: 2, data: { label: 'IPHONEEX', sub: '✦ AI Phone Simulator' } },
-                { id: 'w_memo', type: 'memo', size: '4x2', page: 0, order: 3, data: { title: '📝 备忘录', text: '长按小组件可以编辑内容' } }
+                { id: 'w_clock',  type: 'clock',    size: '2x2', page: 0, order: 0, data: {} },
+                { id: 'w_cal',    type: 'calendar',  size: '2x2', page: 0, order: 1, data: {} },
+                { id: 'w_status', type: 'status',    size: '4x2', page: 0, order: 2, data: { label: 'IPHONEEX', sub: '✦ AI Phone Simulator' } },
+                { id: 'w_memo',   type: 'memo',      size: '4x2', page: 0, order: 3, data: { title: '📝 备忘录', text: '长按小组件可以编辑，长按桌面可以添加新组件' } }
             ];
-            for (const w of defaults) {
-                await Store.put(Store.STORES.widgets, w);
-            }widgets = defaults;
+            for (const w of defaults) await Store.put(Store.STORES.widgets, w);
+            widgets = defaults;
         }
 
-        // Get non-dock apps for desktop
         const desktopApps = defaultApps.filter(a => !dockAppIds.includes(a.id));
-
-        // Build pages
         const pages = [{ widgets: widgets.filter(w => (w.page || 0) === 0), apps: desktopApps }];
         totalPages = pages.length;
 
         pagesContainer.innerHTML = '';
-        dotsContainer.innerHTML = '';
+        dotsContainer.innerHTML  = '';
 
         pages.forEach((page, pageIndex) => {
             const pageEl = document.createElement('div');
             pageEl.className = 'desktop-page';
 
-            // Sort widgets by order
-            const sortedWidgets = [...page.widgets].sort((a, b) => (a.order || 0) - (b.order || 0));
+            const sorted = [...page.widgets].sort((a, b) => (a.order || 0) - (b.order || 0));
 
-            // Render widgets in rows
             let i = 0;
-            while (i < sortedWidgets.length) {
-                const w = sortedWidgets[i];
+            while (i < sorted.length) {
+                const w    = sorted[i];
                 const size = w.size || Widget.types[w.type]?.defaultSize || '2x2';
+                const row  = document.createElement('div');
+                row.className = 'desktop-row';
 
                 if (size === '4x2' || size === '4x4') {
-                    // Full width row
-                    const row = document.createElement('div');
-                    row.className = 'desktop-row';
                     const wEl = Widget.create(w);
                     if (wEl) row.appendChild(wEl);
-                    pageEl.appendChild(row);i++;
+                    pageEl.appendChild(row);
+                    i++;
                 } else {
-                    // 2x2: pair two widgets side by side
-                    const row = document.createElement('div');
-                    row.className = 'desktop-row';
+                    // 2x2：尝试两个并排
                     const wEl = Widget.create(w);
                     if (wEl) row.appendChild(wEl);
 
-                    if (i + 1 < sortedWidgets.length) {
-                        const next = sortedWidgets[i + 1];
+                    if (i + 1 < sorted.length) {
+                        const next     = sorted[i + 1];
                         const nextSize = next.size || Widget.types[next.type]?.defaultSize || '2x2';
                         if (nextSize === '2x2') {
                             const wEl2 = Widget.create(next);
@@ -154,30 +144,26 @@ const Phone = (() => {
                             i++;
                         }
                     }
-                    pageEl.appendChild(row);i++;
+                    pageEl.appendChild(row);
+                    i++;
                 }
             }
 
-            // App icons row
-            if (page.apps && page.apps.length > 0) {
+            if (page.apps?.length > 0) {
                 const iconsRow = document.createElement('div');
                 iconsRow.className = 'app-icons-row';
-                page.apps.forEach(app => {
-                    iconsRow.appendChild(createAppIcon(app));
-                });
+                page.apps.forEach(app => iconsRow.appendChild(createAppIcon(app)));
                 pageEl.appendChild(iconsRow);
             }
 
             pagesContainer.appendChild(pageEl);
 
-            // Page dot
             const dot = document.createElement('div');
             dot.className = `page-dot ${pageIndex === currentPage ? 'active' : ''}`;
             dot.addEventListener('click', () => goToPage(pageIndex));
             dotsContainer.appendChild(dot);
         });
 
-        // Dock
         dockInner.innerHTML = '';
         dockAppIds.forEach(id => {
             const info = defaultApps.find(a => a.id === id);
@@ -190,26 +176,19 @@ const Phone = (() => {
     function createAppIcon(appInfo) {
         const wrapper = document.createElement('div');
         wrapper.className = 'app-icon-wrapper';
-        wrapper.addEventListener('click', (e) => {
-            // Don't open if we just finished a long press
-            if (wrapper._longPressed) {
-                wrapper._longPressed = false;
-                return;
-            }
+
+        wrapper.addEventListener('click', () => {
+            if (wrapper._longPressed) { wrapper._longPressed = false; return; }
             Router.open(appInfo.id);
         });
 
         const icon = document.createElement('div');
         icon.className = 'app-icon';
-
         if (appInfo.customIcon) {
             const img = document.createElement('img');
             img.src = appInfo.customIcon;
             img.alt = appInfo.name;
-            img.onerror = () => {
-                img.remove();
-                icon.textContent = appInfo.icon || '📱';
-            };
+            img.onerror = () => { img.remove(); icon.textContent = appInfo.icon || '📱'; };
             icon.appendChild(img);
         } else {
             icon.textContent = appInfo.icon || '📱';
@@ -222,22 +201,20 @@ const Phone = (() => {
         wrapper.appendChild(icon);
         wrapper.appendChild(label);
 
-        // Context menu on long press / right click
         let pressTimer;
         wrapper.addEventListener('contextmenu', (e) => {
             e.preventDefault();
             wrapper._longPressed = true;
             showAppContextMenu(e, appInfo);
         });
-
         wrapper.addEventListener('pointerdown', (e) => {
             pressTimer = setTimeout(() => {
                 wrapper._longPressed = true;
                 showAppContextMenu(e, appInfo);
             }, 500);
         });
-        wrapper.addEventListener('pointerup', () => clearTimeout(pressTimer));
-        wrapper.addEventListener('pointermove', () => clearTimeout(pressTimer));
+        wrapper.addEventListener('pointerup',    () => clearTimeout(pressTimer));
+        wrapper.addEventListener('pointermove',  () => clearTimeout(pressTimer));
         wrapper.addEventListener('pointerleave', () => clearTimeout(pressTimer));
 
         return wrapper;
@@ -247,9 +224,8 @@ const Phone = (() => {
         const phoneRect = document.getElementById('phone-container').getBoundingClientRect();
         const x = (e.clientX || e.pageX) - phoneRect.left;
         const y = (e.clientY || e.pageY) - phoneRect.top + 8;
-
         showContextMenu(x, y, [
-            { label: '打开', icon: '↗', onClick: () => Router.open(appInfo.id) },
+            { label: '打开',     icon: '↗', onClick: () => Router.open(appInfo.id) },
             { type: 'separator' },
             { label: '编辑图标', icon: '✎', onClick: () => editAppIcon(appInfo) }
         ]);
@@ -274,12 +250,12 @@ const Phone = (() => {
             actions: [
                 { label: '取消', type: 'secondary' },
                 {
-                    label: '保存', type: 'primary', onClick: async () => {
+                    label: '保存', type: 'primary',
+                    onClick: async () => {
                         appInfo.name = document.getElementById('edit-app-name').value || appInfo.name;
                         appInfo.icon = document.getElementById('edit-app-emoji').value || appInfo.icon;
                         const url = document.getElementById('edit-app-icon-url').value;
-                        if (url) appInfo.customIcon = url;
-                        else delete appInfo.customIcon;
+                        if (url) appInfo.customIcon = url; else delete appInfo.customIcon;
                         await renderDesktop();
                     }
                 }
@@ -287,45 +263,133 @@ const Phone = (() => {
         });
     }
 
-    //---- Swipe ----
+    // ── 桌面长按 → 添加小组件 ─────────────────────────────
+    function setupDesktopLongPress() {
+        const vp = document.getElementById('desktop-viewport');
+        let pressTimer;
+        let startX, startY;
+
+        const start = (e) => {
+            const t = e.touches?.[0] || e;
+            startX = t.clientX; startY = t.clientY;
+            pressTimer = setTimeout(() => {
+                // 只在没有拖动的情况下触发
+                showAddWidgetMenu();
+            }, 700);
+        };
+        const cancel = (e) => {
+            const t = e.touches?.[0] || e;
+            if (t && (Math.abs(t.clientX - startX) > 8 || Math.abs(t.clientY - startY) > 8)) {
+                clearTimeout(pressTimer);
+            }
+        };
+        const end = () => clearTimeout(pressTimer);
+
+        vp.addEventListener('touchstart',  start,  { passive: true });
+        vp.addEventListener('touchmove',   cancel, { passive: true });
+        vp.addEventListener('touchend',    end);
+        vp.addEventListener('contextmenu', (e) => {
+            // 桌面空白区域右键
+            if (e.target.closest('.widget-wrapper') || e.target.closest('.app-icon-wrapper')) return;
+            e.preventDefault();
+            showAddWidgetMenu();
+        });
+    }
+
+    function showAddWidgetMenu() {
+        // 小组件类型列表
+        const widgetTypes = [
+            { type: 'photo',   label: '📷 照片',    size: '2x2' },
+            { type: 'profile', label: '👤 信息条',  size: '4x2' },
+            { type: 'tag',     label: '🏷️ 标签条',  size: '2x2' },
+            { type: 'clock',   label: '🕐 时钟',    size: '2x2' },
+            { type: 'calendar',label: '📅 日历',    size: '2x2' },
+            { type: 'memo',    label: '📝 备忘录',  size: '4x2' },
+            { type: 'custom',  label: '✦ 自定义文字', size: '2x2' },
+            { type: 'status',  label: '⚡ 状态条',  size: '4x2' },
+        ];
+
+        const listHtml = widgetTypes.map((w, i) =>
+            `<div class="add-widget-item" data-idx="${i}">
+                <span class="add-widget-label">${w.label}</span>
+                <span class="add-widget-size">${w.size === '4x2' ? '宽' : '方'}</span>
+            </div>`
+        ).join('');
+
+        showModal({
+            title: '添加小组件',
+            content: `<div class="add-widget-list">${listHtml}</div>`,
+            actions: [{ label: '取消', type: 'secondary' }]
+        });
+
+        // 绑定点击
+        document.querySelectorAll('.add-widget-item').forEach(el => {
+            el.addEventListener('click', async () => {
+                const idx  = parseInt(el.dataset.idx);
+                const info = widgetTypes[idx];
+                closeModal();
+
+                // 生成唯一 id
+                const id = 'w_' + Date.now();
+                const allWidgets = await Store.getAll(Store.STORES.widgets);
+                const maxOrder   = allWidgets.reduce((m, w) => Math.max(m, w.order || 0), -1);
+
+                const newWidget = {
+                    id,
+                    type:  info.type,
+                    size:  info.size,
+                    page:  currentPage,
+                    order: maxOrder + 1,
+                    data:  {}
+                };
+                await Store.put(Store.STORES.widgets, newWidget);
+                await renderDesktop();
+                showToast('✓ 已添加，长按组件可编辑');
+            });
+        });
+    }
+
+    // ── Toast ─────────────────────────────────────────────
+    function showToast(msg, type = 'success') {
+        const existing = document.querySelector('.phone-toast');
+        if (existing) existing.remove();
+
+        const t = document.createElement('div');
+        t.className = 'phone-toast';
+        t.textContent = msg;
+        if (type === 'error') t.style.background = 'var(--danger, #ff3b30)';
+        document.getElementById('phone-container').appendChild(t);
+        requestAnimationFrame(() => t.classList.add('phone-toast-show'));
+        setTimeout(() => {
+            t.classList.remove('phone-toast-show');
+            setTimeout(() => t.remove(), 300);
+        }, 2200);
+    }
+
+    // ── 滑动翻页 ──────────────────────────────────────────
     function setupSwipe() {
         const vp = document.getElementById('desktop-viewport');
 
-        // Touch events
         vp.addEventListener('touchstart', onSwipeStart, { passive: true });
-        vp.addEventListener('touchmove', onSwipeMove, { passive: false });
-        vp.addEventListener('touchend', onSwipeEnd);
+        vp.addEventListener('touchmove',  onSwipeMove,  { passive: false });
+        vp.addEventListener('touchend',   onSwipeEnd);
 
-        // Mouse events for desktop
         vp.addEventListener('mousedown', (e) => {
             isMouseDown = true;
             onSwipeStart({ touches: [{ clientX: e.clientX }] });
         });
         vp.addEventListener('mousemove', (e) => {
             if (!isMouseDown) return;
-            onSwipeMove({
-                touches: [{ clientX: e.clientX }],
-                preventDefault: () => e.preventDefault()
-            });
+            onSwipeMove({ touches: [{ clientX: e.clientX }], preventDefault: () => e.preventDefault() });
         });
-        vp.addEventListener('mouseup', () => {
-            if (isMouseDown) {
-                isMouseDown = false;
-                onSwipeEnd();
-            }
-        });
-        vp.addEventListener('mouseleave', () => {
-            if (isMouseDown) {
-                isMouseDown = false;
-                onSwipeEnd();
-            }
-        });
+        vp.addEventListener('mouseup',    () => { if (isMouseDown) { isMouseDown = false; onSwipeEnd(); } });
+        vp.addEventListener('mouseleave', () => { if (isMouseDown) { isMouseDown = false; onSwipeEnd(); } });
     }
 
     function onSwipeStart(e) {
         touchStartX = e.touches[0].clientX;
         touchDeltaX = 0;
-        isDragging = false;
+        isDragging  = false;
         document.getElementById('desktop-pages').style.transition = 'none';
     }
 
@@ -336,7 +400,7 @@ const Phone = (() => {
             if (e.preventDefault) e.preventDefault();
             touchDeltaX = dx;
             const vpWidth = document.getElementById('desktop-viewport').offsetWidth;
-            const offset = -(currentPage * 100) + (dx / vpWidth) * 100;
+            const offset  = -(currentPage * 100) + (dx / vpWidth) * 100;
             document.getElementById('desktop-pages').style.transform = `translateX(${offset}%)`;
         }
     }
@@ -358,7 +422,7 @@ const Phone = (() => {
     function updatePagePosition(animate) {
         const pages = document.getElementById('desktop-pages');
         pages.style.transition = animate ? 'transform 0.4s cubic-bezier(0.22, 1, 0.36, 1)' : 'none';
-        pages.style.transform = `translateX(-${currentPage * 100}%)`;
+        pages.style.transform  = `translateX(-${currentPage * 100}%)`;
         document.querySelectorAll('.page-dot').forEach((d, i) => {
             d.classList.toggle('active', i === currentPage);
         });
@@ -367,14 +431,12 @@ const Phone = (() => {
     function updateStatusTime() {
         const el = document.getElementById('status-time');
         if (el) {
-            el.textContent = new Date().toLocaleTimeString('zh-CN', {
-                hour: '2-digit',
-                minute: '2-digit'
-            });
+            el.textContent = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
         }
     }
 
-    // ---- Modal ----
+    // ── Modal ─────────────────────────────────────────────
+    // 关键修复：onClick 执行完后才 closeModal，而不是无条件立刻关
     function showModal({ title, content, actions = [] }) {
         const layer = document.getElementById('modal-layer');
         layer.classList.remove('hidden');
@@ -390,16 +452,20 @@ const Phone = (() => {
                 ${actionsHtml ? `<div class="modal-actions">${actionsHtml}</div>` : ''}
             </div>`;
 
-        // Bind action buttons
         layer.querySelectorAll('[data-action]').forEach(btn => {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', async () => {
                 const action = actions[parseInt(btn.dataset.action)];
-                if (action?.onClick) action.onClick();
-                closeModal();
+                if (action?.onClick) {
+                    // 有 onClick 的按钮：执行 onClick，由 onClick 内部决定是否关闭
+                    // （保存类操作需要先读取 DOM 值，所以不能提前关）
+                    await action.onClick();
+                } else {
+                    // 没有 onClick（取消按钮）：直接关
+                    closeModal();
+                }
             });
         });
 
-        // Click backdrop to close
         layer.addEventListener('click', (e) => {
             if (e.target === layer) closeModal();
         });
@@ -407,19 +473,20 @@ const Phone = (() => {
 
     function closeModal() {
         const layer = document.getElementById('modal-layer');
-        layer.classList.add('hidden');layer.innerHTML = '';
+        layer.classList.add('hidden');
+        layer.innerHTML = '';
     }
 
-    // ---- Context Menu ----
+    // ── Context Menu ──────────────────────────────────────
     function showContextMenu(x, y, items) {
         const layer = document.getElementById('context-menu-layer');
         layer.classList.remove('hidden');
 
-        const pc = document.getElementById('phone-container');
-        const maxX = pc.offsetWidth - 220;
-        const maxY = pc.offsetHeight - (items.length * 44+ 20);
-        const sx = Math.min(Math.max(x, 10), maxX);
-        const sy = Math.min(Math.max(y, 10), maxY);
+        const pc   = document.getElementById('phone-container');
+        const maxX = pc.offsetWidth  - 220;
+        const maxY = pc.offsetHeight - (items.length * 44 + 20);
+        const sx   = Math.min(Math.max(x, 10), maxX);
+        const sy   = Math.min(Math.max(y, 10), maxY);
 
         const itemsHtml = items.map((item, i) => {
             if (item.type === 'separator') return '<div class="context-menu-separator"></div>';
@@ -446,7 +513,8 @@ const Phone = (() => {
 
     function closeContextMenu() {
         const layer = document.getElementById('context-menu-layer');
-        layer.classList.add('hidden');layer.innerHTML = '';
+        layer.classList.add('hidden');
+        layer.innerHTML = '';
     }
 
     async function refreshDesktop() {
@@ -457,10 +525,12 @@ const Phone = (() => {
         init,
         showModal,
         closeModal,
+        showToast,
         showContextMenu,
         closeContextMenu,
         refreshDesktop,
         loadSettings
     };
 })();
+
 
