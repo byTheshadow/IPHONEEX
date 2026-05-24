@@ -185,6 +185,8 @@
     transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
     -webkit-tap-highlight-color: transparent;
     position: relative;
+    touch-action: none; 
+
 }
 
 .widget-wrapper:active {
