@@ -254,6 +254,239 @@
     font-size: 20px;
     opacity: 0.6;
 }
+/* ── 照片小组件 ─────────────────────────────────────── */
+.widget-photo-empty {
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.widget-photo-placeholder {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: 2px dashed var(--glass-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: var(--text-tertiary);
+}
+
+/* 圆形头像模式 */
+.widget-photo-round {
+    width: 100%;
+    height: 100%;
+    min-height: 140px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 16px 12px 12px;
+    gap: 10px;
+}
+
+.widget-photo-label-round {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    text-align: center;
+    letter-spacing: 0.3px;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 方形大图模式 */
+.widget-photo-square {
+    width: 100%;
+    height: 100%;
+    min-height: 140px;
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--glass-radius);
+}
+
+.widget-photo-label {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 20px 12px 10px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.55));
+    font-size: 12px;
+    color: #fff;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    text-align: center;
+}
+
+/* 方形图片模式去掉毛玻璃背景，让图片直接撑满 */
+.widget-wrapper.widget-photo-mode {
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: none;
+    box-shadow: none;
+    overflow: hidden;
+}
+
+/* ── 信息条小组件 ────────────────────────────────────── */
+.widget-profile-content {
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between;
+    padding: 14px 16px;
+    min-height: 80px;
+}
+
+.widget-profile-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+}
+
+.widget-profile-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 1.5px solid var(--glass-border);
+}
+
+.widget-profile-avatar-placeholder {
+    background: var(--glass-bg-heavy);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.widget-profile-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.widget-profile-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: -0.2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.widget-profile-sub {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.widget-profile-right {
+    text-align: right;
+    flex-shrink: 0;
+    margin-left: 10px;
+}
+
+.widget-profile-right-main {
+    font-size: 22px;
+    font-weight: 300;
+    color: var(--text-primary);
+    letter-spacing: -1px;
+    line-height: 1;
+}
+
+.widget-profile-right-sub {
+    font-size: 10px;
+    color: var(--text-tertiary);
+    margin-top: 3px;
+}
+
+/* ── 标签条小组件 ────────────────────────────────────── */
+.widget-tag-content {
+    justify-content: center !important;
+    padding: 12px 16px;
+    min-height: 60px;
+}
+
+.widget-tag-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.widget-tag-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.widget-tag-texts {
+    flex: 1;
+    min-width: 0;
+}
+
+.widget-tag-text {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: 0.2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.widget-tag-sub {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ── Toast 提示 ──────────────────────────────────────── */
+.widget-toast {
+    position: absolute;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    background: rgba(30, 30, 30, 0.92);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 9px 20px;
+    border-radius: 20px;
+    white-space: nowrap;
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    pointer-events: none;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.12);
+}
+
+[data-theme="light"] .widget-toast {
+    background: rgba(255,255,255,0.92);
+    color: #111;
+    border-color: rgba(0,0,0,0.1);
+}
+
+.widget-toast.widget-toast-show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
 
 /* ---- App Icon ---- */
 .app-icons-row {
