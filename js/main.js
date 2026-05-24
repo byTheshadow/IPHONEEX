@@ -537,20 +537,19 @@ function hideNotification() {
 }
 
 // ================================================================
-//  10. 隐藏 Loading遮罩
+//10. 隐藏 Loading 遮罩
 // ================================================================
 function hideLoadingScreen() {
   const loading = document.getElementById('loading-screen');
   if (!loading) return;
 
-  // 等待加载条动画完成
   const fill = loading.querySelector('.loading-bar-fill');
   if (fill) {
-    fill.style.animation = 'loadingBar600ms var(--ease-out) forwards';
+    fill.style.animation = 'loadingBar 600ms var(--ease-out) forwards';
   }
 
   setTimeout(() => {
-    loading.style.opacity= '0';
+    loading.style.opacity = '0';
     loading.style.transition = `opacity var(--duration-slow) var(--ease-out)`;
     setTimeout(() => {
       loading.hidden = true;
@@ -559,6 +558,7 @@ function hideLoadingScreen() {
     }, 450);
   }, 700);
 }
+
 
 // ================================================================
 //  11. 致命错误展示（兜底）
