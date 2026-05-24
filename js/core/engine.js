@@ -12,13 +12,13 @@ class Engine {
   constructor() {
     this._timer = null;
     this._running = false;
-    this._aiAutoEnabled = false; // AI 自主发消息开关}
+    this._aiAutoEnabled = false;
+  }
 
   async start() {
     if (this._running) return;
     this._running = true;
 
-    // 读取开关状态
     const settings = await db.user.get('engine_settings');
     this._aiAutoEnabled = settings?.aiAutoEnabled ?? false;
 
@@ -37,7 +37,6 @@ class Engine {
     console.log('[Engine] ⏹ 引擎已停止');
   }
 
-  /** 获取/设置 AI 自主消息开关 */
   get aiAutoEnabled() {
     return this._aiAutoEnabled;
   }
@@ -45,24 +44,20 @@ class Engine {
   async setAiAutoEnabled(enabled) {
     this._aiAutoEnabled = enabled;
     await db.user.set('engine_settings', { aiAutoEnabled: enabled });
-    eventBus.emit('engine:aiAutoChanged', { enabled });console.log('[Engine] AI自主消息:', enabled ? '已开启' : '已关闭');
+    eventBus.emit('engine:aiAutoChanged', { enabled });
+    console.log('[Engine] AI自主消息:', enabled ? '已开启' : '已关闭');
   }
 
   async _tick() {
     if (!this._aiAutoEnabled) return;
-
     const now = new Date();
     try {
-      // TODO: 阶段三实现 — 检测用户空闲时间，触发 AI 主动打招呼
+      // TODO: 阶段三实现
       // await this._checkProactiveGreeting(now);
-
-      // TODO: 阶段三实现 — 朋友圈自动发布
       // await this._checkAutoMoments(now);
-
-      // TODO: 阶段三实现 — 日历事件提醒
       // await this._checkUpcomingEvents(now);
     } catch (err) {
-      console.error('[Engine] tick出错:', err);
+      console.error('[Engine] tick 出错:', err);
     }
   }
 
