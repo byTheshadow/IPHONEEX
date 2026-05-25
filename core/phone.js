@@ -7,6 +7,7 @@ const Phone = (() => {
     let isDragging = false;
     let isMouseDown = false;
     let touchStartY = 0;
+    let touchStartY = 0;
 
     const defaultApps = [
         { id: 'chat',     name: '聊天',   icon: '💬', color: 'rgba(255,255,255,0.08)' },
@@ -386,11 +387,10 @@ const Phone = (() => {
     }
 
     // ── 滑动翻页 ──────────────────────────────────────────
-    // ── 滑动翻页 ──────────────────────────────────────────
+   // ── 滑动翻页 ──────────────────────────────────────────
 function setupSwipe() {
     const vp = document.getElementById('desktop-viewport');
 
-    // ⚠️ 必须 passive:false 才能 preventDefault，但只在水平滑动时才调用
     vp.addEventListener('touchstart', onSwipeStart, { passive: true });
     vp.addEventListener('touchmove',  onSwipeMove,  { passive: false });
     vp.addEventListener('touchend',   onSwipeEnd);
@@ -409,7 +409,7 @@ function setupSwipe() {
 
 function onSwipeStart(e) {
     touchStartX = e.touches[0].clientX;
-    touchStartY = e.touches[0].clientY; // ← 新增：记录起始 Y
+    touchStartY = e.touches[0].clientY;
     touchDeltaX = 0;
     isDragging  = false;
     document.getElementById('desktop-pages').style.transition = 'none';
@@ -417,20 +417,18 @@ function onSwipeStart(e) {
 
 function onSwipeMove(e) {
     const dx = e.touches[0].clientX - touchStartX;
-    const dy = e.touches[0].clientY - touchStartY; // ← 新增：计算 Y 偏移
+    const dy = e.touches[0].clientY - touchStartY;
 
-    // 只有水平位移明显大于垂直位移时，才认定为横向滑动
     if (!isDragging) {
         if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) * 1.5) {
             isDragging = true;
         } else if (Math.abs(dy) > 10) {
-            // 垂直方向先动了，放弃这次横滑，让浏览器处理滚动
+            // 垂直方向先动，放弃横滑，让浏览器处理滚动
             return;
         }
     }
 
     if (isDragging) {
-        // 只有确认是横滑才阻止默认行为（此时 cancelable 一定是 true）
         if (e.cancelable) e.preventDefault();
         touchDeltaX = dx;
         const vpWidth = document.getElementById('desktop-viewport').offsetWidth;
@@ -439,6 +437,14 @@ function onSwipeMove(e) {
     }
 }
 
+function onSwipeEnd() {
+    if (!isDragging) return;
+    isDragging = false;
+    const threshold = document.getElementById('desktop-viewport').offsetWidth * 0.2;
+    if (touchDeltaX < -threshold && currentPage < totalPages - 1) currentPage++;
+    else if (touchDeltaX > threshold && currentPage > 0) currentPage--;
+    updatePagePosition(true);
+}
 
     function goToPage(i) {
         currentPage = Math.max(0, Math.min(i, totalPages - 1));
