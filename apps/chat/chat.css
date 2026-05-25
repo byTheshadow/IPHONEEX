@@ -1226,19 +1226,23 @@
 
 /* ---------- 表情包面板 ---------- */
 .sticker-panel {
-    position: absolute;
-    bottom: 100%;
-    left: 0;
-    right: 0;
+    /* 去掉 absolute 定位，改为普通流，自然排在输入框上方 */
+    position: relative;
+    bottom: unset;
+    left: unset;
+    right: unset;
+    margin: 0 10px 0;   /* 和输入框左右对齐 */
     max-height: 240px;
     background: var(--glass-bg);
     backdrop-filter: var(--glass-blur);
-    border-top: 1px solid var(--glass-border-light);
+    border: 1px solid var(--glass-border-light);
+    border-radius: 20px;  /* 圆角和输入框一致 */
     display: flex;
     flex-direction: column;
     animation: slideUp 0.25s ease;
-    z-index: 10;
+    overflow: hidden;
 }
+
 
 @keyframes slideUp {
     from { transform: translateY(100%); opacity: 0; }

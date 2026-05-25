@@ -1663,11 +1663,12 @@ const ChatApp = (() => {
     }
 
     /* ---- 表情包面板（聊天内） ---- */
-    async function toggleStickerPanel() {
-        const inputArea = document.getElementById('chat-input-area');
-        if (!inputArea) return;
+       async function toggleStickerPanel() {
+        // 面板挂在 chat-view 上，避免被 chat-input-area 的 overflow:hidden 裁掉
+        const chatView = document.getElementById('chat-view');
+        if (!chatView) return;
 
-        const existing = inputArea.querySelector('.sticker-panel');
+        const existing = chatView.querySelector('.sticker-panel');
         if (existing) {
             existing.remove();
             stickerPanelOpen = false;
@@ -1698,7 +1699,14 @@ const ChatApp = (() => {
         }
 
         panel.innerHTML = panelHtml;
-        inputArea.appendChild(panel);
+
+        // 插入到 chat-input-area 之前（输入框上方）
+        const inputArea = document.getElementById('chat-input-area');
+        if (inputArea) {
+            chatView.insertBefore(panel, inputArea);
+        } else {
+            chatView.appendChild(panel);
+        }
 
         panel.querySelectorAll('[data-sticker-send]').forEach(el => {
             el.addEventListener('click', async () => {
@@ -1711,6 +1719,7 @@ const ChatApp = (() => {
             });
         });
     }
+
         function toggleToolbar() {
         const toolbar = document.getElementById('chat-input-toolbar');
         const btn = document.getElementById('chat-expand-btn');
