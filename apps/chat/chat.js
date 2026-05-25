@@ -31,10 +31,14 @@ const ChatApp = (() => {
     /* ============================================
        会话列表
        ============================================ */
-    async function renderList() {
+        async function renderList() {
         return `<div class="chat-list-container">
-            <div class="app-header" style="justify-content: center; padding-top: 10px;">
-                <span style="width:60px"></span>
+            <div class="app-header" style="padding-top: 10px;">
+                <button class="app-header-btn app-back-btn" onclick="Router.closeAll()" title="返回主界面">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px">
+                        <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                </button>
                 <span class="app-header-title" style="font-size: 18px; font-weight: 600;">Messages</span>
                 <span style="width:60px"></span>
             </div>
@@ -47,6 +51,7 @@ const ChatApp = (() => {
             <button class="chat-fab" id="chat-fab" title="新建">＋</button>
         </div>`;
     }
+
 
     async function initList() {
         const searchInput = document.getElementById('chat-search');
@@ -732,7 +737,7 @@ const ChatApp = (() => {
                 return `
         <div class="chat-view" id="chat-view">
             <div class="chat-header">
-                <button class="chat-header-btn app-back-btn" onclick="ChatApp.exitChat()" title="返回" style="width:36px;height:36px">
+                                <button class="chat-header-btn" onclick="ChatApp.exitChat()" title="返回" style="width:36px;height:36px">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px">
                         <polyline points="15 18 9 12 15 6"/>
                     </svg>
