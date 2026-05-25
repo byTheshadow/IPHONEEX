@@ -77,7 +77,7 @@ const ChatApp = (() => {
         }
     }
 
-    async function renderChatsList(container, search) {
+       async function renderChatsList(container, search) {
         const chats = await Store.getAll(Store.STORES.chats);
         const chars = await Store.getAll(Store.STORES.characters);
         const charMap = {};
@@ -96,9 +96,8 @@ const ChatApp = (() => {
 
         let html = '';
 
+        // 顶部最近3个圆球（无搜索时显示）
         const recentChats = filtered.slice(0, 3);
-        const listChats = filtered.slice(3);
-
         if (recentChats.length > 0 && !search) {
             html += `<div class="chat-recent-list">`;
             html += recentChats.map(chat => {
@@ -115,28 +114,25 @@ const ChatApp = (() => {
             html += `</div>`;
         }
 
-        const chatsToRender = search ? filtered : listChats;
-
-        if (chatsToRender.length > 0) {
-            html += chatsToRender.map(chat => {
-                const firstChar = chat.characterIds?.[0] ? charMap[chat.characterIds[0]] : null;
-                const avatar = firstChar?.avatar
-                    ? `<img src="${escapeHtml(firstChar.avatar)}" alt="">`
-                    : (firstChar?.name?.[0] || chat.name?.[0] || '💬');
-                const typeLabel = chat.type === 'group' ? '👥 ' : chat.type === 'model' ? '🤖 ' : '';
-                return `
-                <div class="chat-contact-item" data-chat-id="${chat.id}">
-                    <div class="chat-contact-avatar">${avatar}</div>
-                    <div class="chat-contact-info">
-                        <div class="chat-contact-name">${typeLabel}${escapeHtml(chat.name)}</div>
-                    </div>
-                    <div class="chat-contact-meta">
-                        <span class="chat-contact-time">${chat.updatedAt ? fmtDate(chat.updatedAt) : ''}</span>
-                        <span class="chat-contact-arrow">›</span>
-                    </div>
-                </div>`;
-            }).join('');
-        }
+        // 下方列表：搜索时显示全部，无搜索时也显示全部（包含前3个）
+        html += filtered.map(chat => {
+            const firstChar = chat.characterIds?.[0] ? charMap[chat.characterIds[0]] : null;
+            const avatar = firstChar?.avatar
+                ? `<img src="${escapeHtml(firstChar.avatar)}" alt="">`
+                : (firstChar?.name?.[0] || chat.name?.[0] || '💬');
+            const typeLabel = chat.type === 'group' ? '👥 ' : chat.type === 'model' ? '🤖 ' : '';
+            return `
+            <div class="chat-contact-item" data-chat-id="${chat.id}">
+                <div class="chat-contact-avatar">${avatar}</div>
+                <div class="chat-contact-info">
+                    <div class="chat-contact-name">${typeLabel}${escapeHtml(chat.name)}</div>
+                </div>
+                <div class="chat-contact-meta">
+                    <span class="chat-contact-time">${chat.updatedAt ? fmtDate(chat.updatedAt) : ''}</span>
+                    <span class="chat-contact-arrow">›</span>
+                </div>
+            </div>`;
+        }).join('');
 
         container.innerHTML = html;
 
@@ -149,6 +145,7 @@ const ChatApp = (() => {
             el.addEventListener('pointermove', () => clearTimeout(pressTimer));
         });
     }
+
 
     function showChatContextMenu(e, chatId) {
         const phoneRect = document.getElementById('phone-container').getBoundingClientRect();
@@ -749,8 +746,8 @@ const ChatApp = (() => {
                 <div style="display:flex;justify-content:center;padding:40px"><div class="chat-spinner"></div></div>
             </div>
             <div id="chat-reply-bar-container"></div>
-            <div class="chat-input-area" id="chat-input-area">
-                <div class="chat-input-toolbar">
+                        <div class="chat-input-area" id="chat-input-area">
+                <div class="chat-input-toolbar" id="chat-input-toolbar">
                     <button class="chat-toolbar-btn" onclick="ChatApp.toggleStickerPanel()" title="表情包">😀</button>
                     <button class="chat-toolbar-btn" onclick="ChatApp.sendSpecialMsg('image')" title="图片">🖼</button>
                     <button class="chat-toolbar-btn" onclick="ChatApp.sendSpecialMsg('voice')" title="语音">🎤</button>
@@ -759,6 +756,7 @@ const ChatApp = (() => {
                     <button class="chat-toolbar-btn" onclick="ChatApp.sendSpecialMsg('gift')" title="礼物">🎁</button>
                 </div>
                 <div class="chat-input-row">
+                    <button class="chat-expand-btn" id="chat-expand-btn" onclick="ChatApp.toggleToolbar()" title="更多">+</button>
                     <div class="chat-input-wrapper">
                         <textarea class="chat-input" id="chat-input" placeholder="输入消息..." rows="1"></textarea>
                     </div>
@@ -1663,6 +1661,15 @@ const ChatApp = (() => {
             });
         });
     }
+        function toggleToolbar() {
+        const toolbar = document.getElementById('chat-input-toolbar');
+        const btn = document.getElementById('chat-expand-btn');
+        if (!toolbar || !btn) return;
+        const isExpanded = toolbar.classList.contains('expanded');
+        toolbar.classList.toggle('expanded', !isExpanded);
+        btn.classList.toggle('expanded', !isExpanded);
+    }
+
 
     /* ---- 总结视图 ---- */
     async function openSummaryView() {
@@ -1983,15 +1990,14 @@ const ChatApp = (() => {
     }
 
     /* ======== 公开 API ======== */
-    return {
+        return {
         render, init,
         backToList, addSticker, createKnowledgeBook, openKnowledgeManager, openStickerManager,
-        exitChat, sendSilent, sendAndTrigger, sendSpecialMsg, toggleStickerPanel, openChatMenu, clearReply, retryLastResponse,
+        exitChat, sendSilent, sendAndTrigger, sendSpecialMsg, toggleStickerPanel, toggleToolbar,
+        openChatMenu, clearReply, retryLastResponse,
         addKBEntry, removeKBEntry, toggleKBEntry, saveKBEntry,
         editSummary, editDiary, openPromptSettings,
-        // 新增壁纸相关公开方法
         setListWallpaper, setChatWallpaper,
-        // 新增角色/会话管理
         confirmDeleteCharFromChat, clearChatMessages, openCharInfoFromChat, openSummaryView, openDiaryView
     };
 })();

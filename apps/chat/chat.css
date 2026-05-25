@@ -373,28 +373,17 @@
 .chat-msg-row.consecutive .chat-msg-avatar {
     visibility: hidden;
 }
-
 /* 内容包裹层 */
 .chat-msg-content-wrapper {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    max-width: calc(100% - 80px); /* 给两边留出空间 */
+    max-width: calc(100% - 56px); /* 收窄头像占用，给气泡更多空间 */
+    min-width: 0;
 }
 
 .chat-msg-row.user .chat-msg-content-wrapper {
     align-items: flex-end;
-}
-
-.chat-msg-sender {
-    font-size: 11px;
-    color: var(--text-secondary);
-    padding: 0 4px;
-    margin-bottom: 2px;
-}
-
-.chat-msg-row.user .chat-msg-sender {
-    display: none;
 }
 
 /* 气泡行（包含气泡和时间） */
@@ -402,6 +391,7 @@
     display: flex;
     align-items: flex-end;
     gap: 6px;
+    max-width: 100%;
 }
 
 .chat-msg-row.user .chat-msg-bubble-row {
@@ -414,9 +404,13 @@
     font-size: 15px;
     line-height: 1.5;
     word-break: break-word;
+    word-wrap: break-word;
+    white-space: pre-wrap;       /* 保留换行但允许自动折行 */
+    overflow-wrap: break-word;
     position: relative;
-    max-width: 100%;
-    /* 高级玻璃质感升级：更强的磨砂、细腻的边框、高光内阴影 */
+    max-width: 240px;            /* 限制最大宽度，超出自动换行 */
+    min-width: 0;
+    display: block;              /* 确保块级，不压缩成竖排 */
     background: var(--glass-bg-heavy);
     backdrop-filter: var(--glass-blur);
     -webkit-backdrop-filter: var(--glass-blur);
@@ -944,40 +938,93 @@
     0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
     30% { transform: translateY(-6px); opacity: 1; }
 }
-
 /* ---------- 输入区域 ---------- */
+.chat-input-area {
+    background: var(--glass-bg-heavy);
+    border-top: 1px solid var(--glass-border);
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
+    padding: 8px 12px;
+    backdrop-filter: var(--glass-blur);
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    position: relative;
+}
+
+/* 工具栏收缩动画 */
 .chat-input-toolbar {
     display: flex;
     gap: 4px;
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transition: max-height 0.25s ease, opacity 0.2s ease;
+}
+
+.chat-input-toolbar.expanded {
+    max-height: 48px;
+    opacity: 1;
 }
 
 .chat-toolbar-btn {
-    width: 32px;
-    height: 32px;
+    width: 34px;
+    height: 34px;
     border: none;
-    background: none;
+    background: var(--glass-bg-light);
     color: var(--text-secondary);
     font-size: 16px;
     cursor: pointer;
-    border-radius: 8px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.2s;
+    flex-shrink: 0;
 }
 
-.chat-toolbar-btn:hover { background: var(--glass-bg-light); }
+.chat-toolbar-btn:hover { background: var(--glass-bg); }
 .chat-toolbar-btn:active { transform: scale(0.9); }
 
+/* 主输入行 */
 .chat-input-row {
     display: flex;
     align-items: flex-end;
     gap: 8px;
 }
 
+/* + 展开按钮 */
+.chat-expand-btn {
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: var(--glass-bg-light);
+    border: 1px solid var(--glass-border-light);
+    border-radius: 50%;
+    color: var(--text-secondary);
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.25s ease;
+    line-height: 1;
+}
+
+.chat-expand-btn.expanded {
+    transform: rotate(45deg);
+    background: var(--glass-bg);
+    color: var(--text-primary);
+}
+
+.chat-expand-btn:active { transform: scale(0.9); }
+.chat-expand-btn.expanded:active { transform: rotate(45deg) scale(0.9); }
+
 .chat-input-wrapper {
     flex: 1;
     position: relative;
+    min-width: 0;
 }
 
 .chat-input {
