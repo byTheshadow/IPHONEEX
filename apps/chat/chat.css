@@ -956,49 +956,50 @@
     0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
     30% { transform: translateY(-6px); opacity: 1; }
 }
+
 /* ---------- 输入区域（悬浮卡片式） ---------- */
 .chat-input-area {
-    /* 悬浮效果：不贴底，有外边距和圆角 */
     margin: 0 10px 10px;
-    padding: 8px 10px;
+    padding: 0;                  /* 去掉 padding，改到内部子元素控制 */
     background: var(--glass-bg-heavy);
     backdrop-filter: var(--glass-blur);
     -webkit-backdrop-filter: var(--glass-blur);
     border: 1px solid var(--glass-border-light);
-    border-radius: 24px;
+    border-radius: 24px;         /* 默认四角圆润 */
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    overflow: hidden;            /* 关键：裁剪子元素，保持整体圆角 */
     position: relative;
-    /* 去掉原来的 border-top */
+    transition: border-radius 0.25s ease;
 }
 
 /* 工具栏收缩动画 */
 .chat-input-toolbar {
     display: flex;
     gap: 4px;
-    overflow: hidden;
     max-height: 0;
     opacity: 0;
-    padding: 0 4px;
+    overflow: hidden;
+    padding: 0 12px;
     transition: max-height 0.25s ease, opacity 0.2s ease, padding 0.2s ease;
+    /* 工具栏在卡片内部顶部，背景与卡片一致 */
+    background: transparent;
 }
 
 .chat-input-toolbar.expanded {
-    max-height: 48px;
+    max-height: 52px;
     opacity: 1;
-    padding: 4px 4px 0;
+    padding: 10px 12px 6px;
 }
 
 .chat-toolbar-btn {
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
     border: none;
     background: var(--glass-bg-light);
     color: var(--text-secondary);
-    font-size: 16px;
     cursor: pointer;
     border-radius: 10px;
     display: flex;
@@ -1008,14 +1009,33 @@
     flex-shrink: 0;
 }
 
+.chat-toolbar-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
 .chat-toolbar-btn:hover { background: var(--glass-bg); }
 .chat-toolbar-btn:active { transform: scale(0.9); }
+
+/* 工具栏和输入行之间的分割线（展开时才显示） */
+.chat-toolbar-divider {
+    height: 1px;
+    background: var(--glass-border-light);
+    margin: 0 12px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.chat-input-toolbar.expanded + .chat-toolbar-divider {
+    opacity: 1;
+}
 
 /* 主输入行 */
 .chat-input-row {
     display: flex;
     align-items: flex-end;
     gap: 6px;
+    padding: 8px 8px 8px 10px;  /* 内边距移到这里 */
 }
 
 /* + 展开按钮 */
@@ -1027,8 +1047,6 @@
     border: 1px solid var(--glass-border-light);
     border-radius: 50%;
     color: var(--text-secondary);
-    font-size: 22px;
-    line-height: 1;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -1037,10 +1055,14 @@
     transition: transform 0.25s ease, background 0.2s ease;
 }
 
-.chat-expand-btn.expanded {
+.chat-expand-btn svg {
+    width: 16px;
+    height: 16px;
+    transition: transform 0.25s ease;
+}
+
+.chat-expand-btn.expanded svg {
     transform: rotate(45deg);
-    background: var(--glass-bg);
-    color: var(--text-primary);
 }
 
 .chat-expand-btn:active { opacity: 0.7; }
@@ -1055,9 +1077,8 @@
     min-height: 34px;
     max-height: 120px;
     padding: 7px 12px;
-    border: none;               /* 外层卡片已有边框，input本身去掉边框 */
-    background: transparent;    /* 透明背景，融入卡片 */
-    border-radius: 0;
+    border: none;
+    background: transparent;
     color: var(--text-primary);
     font-size: 14px;
     line-height: 1.4;
@@ -1086,9 +1107,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 15px;
     transition: all 0.2s;
     flex-shrink: 0;
+}
+
+.chat-send-btn svg {
+    width: 16px;
+    height: 16px;
 }
 
 .chat-send-btn:active { transform: scale(0.85); }

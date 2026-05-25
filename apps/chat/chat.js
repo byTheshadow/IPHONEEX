@@ -794,6 +794,7 @@ const ChatApp = (() => {
                         </svg>
                     </button>
                 </div>
+                <div class="chat-toolbar-divider"></div>
                 <div class="chat-input-row">
                     <button class="chat-expand-btn" id="chat-expand-btn" onclick="ChatApp.toggleToolbar()" title="更多">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
