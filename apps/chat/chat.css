@@ -373,12 +373,32 @@
 .chat-msg-row.consecutive .chat-msg-avatar {
     visibility: hidden;
 }
+/* 消息行 */
+.chat-msg-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    width: 100%;
+    animation: msgSlideIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.chat-msg-row.user {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+    justify-content: flex-start;
+}
+
+.chat-msg-row.assistant {
+    align-self: flex-start;
+    justify-content: flex-start;
+}
+
 /* 内容包裹层 */
 .chat-msg-content-wrapper {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    max-width: calc(100% - 56px); /* 收窄头像占用，给气泡更多空间 */
+    max-width: 72%;   /* 整体最多占聊天区72%宽 */
     min-width: 0;
 }
 
@@ -391,7 +411,6 @@
     display: flex;
     align-items: flex-end;
     gap: 6px;
-    max-width: 100%;
 }
 
 .chat-msg-row.user .chat-msg-bubble-row {
@@ -405,12 +424,11 @@
     line-height: 1.5;
     word-break: break-word;
     word-wrap: break-word;
-    white-space: pre-wrap;       /* 保留换行但允许自动折行 */
+    white-space: pre-wrap;
     overflow-wrap: break-word;
     position: relative;
-    max-width: 240px;            /* 限制最大宽度，超出自动换行 */
+    /* 不设 max-width，由父容器 .chat-msg-content-wrapper 的 max-width 控制 */
     min-width: 0;
-    display: block;              /* 确保块级，不压缩成竖排 */
     background: var(--glass-bg-heavy);
     backdrop-filter: var(--glass-blur);
     -webkit-backdrop-filter: var(--glass-blur);
@@ -938,18 +956,23 @@
     0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
     30% { transform: translateY(-6px); opacity: 1; }
 }
-/* ---------- 输入区域 ---------- */
+/* ---------- 输入区域（悬浮卡片式） ---------- */
 .chat-input-area {
+    /* 悬浮效果：不贴底，有外边距和圆角 */
+    margin: 0 10px 10px;
+    padding: 8px 10px;
     background: var(--glass-bg-heavy);
-    border-top: 1px solid var(--glass-border);
-    box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
-    padding: 8px 12px;
     backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border-light);
+    border-radius: 24px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
     gap: 6px;
     position: relative;
+    /* 去掉原来的 border-top */
 }
 
 /* 工具栏收缩动画 */
@@ -959,12 +982,14 @@
     overflow: hidden;
     max-height: 0;
     opacity: 0;
-    transition: max-height 0.25s ease, opacity 0.2s ease;
+    padding: 0 4px;
+    transition: max-height 0.25s ease, opacity 0.2s ease, padding 0.2s ease;
 }
 
 .chat-input-toolbar.expanded {
     max-height: 48px;
     opacity: 1;
+    padding: 4px 4px 0;
 }
 
 .chat-toolbar-btn {
@@ -990,26 +1015,26 @@
 .chat-input-row {
     display: flex;
     align-items: flex-end;
-    gap: 8px;
+    gap: 6px;
 }
 
 /* + 展开按钮 */
 .chat-expand-btn {
-    width: 36px;
-    height: 36px;
+    width: 34px;
+    height: 34px;
     border: none;
     background: var(--glass-bg-light);
     border: 1px solid var(--glass-border-light);
     border-radius: 50%;
     color: var(--text-secondary);
-    font-size: 20px;
+    font-size: 22px;
+    line-height: 1;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    transition: all 0.25s ease;
-    line-height: 1;
+    transition: transform 0.25s ease, background 0.2s ease;
 }
 
 .chat-expand-btn.expanded {
@@ -1018,23 +1043,21 @@
     color: var(--text-primary);
 }
 
-.chat-expand-btn:active { transform: scale(0.9); }
-.chat-expand-btn.expanded:active { transform: rotate(45deg) scale(0.9); }
+.chat-expand-btn:active { opacity: 0.7; }
 
 .chat-input-wrapper {
     flex: 1;
-    position: relative;
     min-width: 0;
 }
 
 .chat-input {
     width: 100%;
-    min-height: 36px;
+    min-height: 34px;
     max-height: 120px;
-    padding: 8px 14px;
-    border: 1px solid var(--glass-border-light);
-    background: var(--glass-bg-light);
-    border-radius: 20px;
+    padding: 7px 12px;
+    border: none;               /* 外层卡片已有边框，input本身去掉边框 */
+    background: transparent;    /* 透明背景，融入卡片 */
+    border-radius: 0;
     color: var(--text-primary);
     font-size: 14px;
     line-height: 1.4;
@@ -1043,10 +1066,8 @@
     box-sizing: border-box;
     font-family: inherit;
     overflow-y: auto;
-    transition: border-color 0.2s;
 }
 
-.chat-input:focus { border-color: var(--accent); }
 .chat-input::placeholder { color: var(--text-tertiary); }
 
 /* 双发送按钮 */
@@ -1057,8 +1078,8 @@
 }
 
 .chat-send-btn {
-    width: 36px;
-    height: 36px;
+    width: 34px;
+    height: 34px;
     border: none;
     border-radius: 50%;
     cursor: pointer;
@@ -1067,12 +1088,13 @@
     justify-content: center;
     font-size: 15px;
     transition: all 0.2s;
+    flex-shrink: 0;
 }
 
 .chat-send-btn:active { transform: scale(0.85); }
 
 .chat-send-silent {
-    background: var(--glass-bg-heavy);
+    background: var(--glass-bg-light);
     color: var(--text-secondary);
     border: 1px solid var(--glass-border-light);
 }
@@ -1089,6 +1111,7 @@
     opacity: 0.3;
     pointer-events: none;
 }
+
 
 /* 引用预览条 */
 .chat-reply-bar {
