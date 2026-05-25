@@ -34,7 +34,7 @@ const ChatApp = (() => {
         async function renderList() {
         return `<div class="chat-list-container">
             <div class="app-header" style="padding-top: 10px;">
-                <button class="app-header-btn app-back-btn" onclick="Router.closeAll()" title="返回主界面">
+                                <button class="app-header-btn" onclick="Router.closeAll()" title="返回主界面">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px">
                         <polyline points="15 18 9 12 15 6"/>
                     </svg>
