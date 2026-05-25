@@ -930,24 +930,20 @@ const ChatApp = (() => {
                 bubbleClass += ' sticker-bubble';
                 bubbleContent = `<img class="chat-sticker-img" src="${escapeHtml(msg.typeData?.url || '')}" alt="${escapeHtml(msg.typeData?.description || '')}" onerror="this.alt='表情加载失败';this.style.padding='20px';this.style.fontSize='12px';this.style.color='var(--text-tertiary)'">`;
                 break;
-                   case 'image':
-            Phone.showModal({
-                title: '发送图片',
-                content: `
-                    <div class="form-group" style="margin-bottom:0">
-                        <label class="form-label">图片描述</label>
-                        <textarea class="form-textarea" id="special-img-desc" rows="3" placeholder="描述这张图片的内容，例如：一杯热咖啡放在木桌上"></textarea>
-                    </div>`,
-                actions: [
-                    { label: '取消', type: 'secondary' },
-                    { label: '发送', type: 'primary', onClick: async () => {
-                        const desc = document.getElementById('special-img-desc').value.trim();
-                        if (!desc) { showToast('请输入图片描述'); return; }
-                        await saveSpecialMessage('image', desc, { url: '', description: desc });
-                    }}
-                ]
-            });
-            break;
+                case 'image':
+                bubbleClass += ' image-bubble';
+                bubbleContent = `
+                    <div class="chat-image-placeholder" onclick="ChatApp.toggleImageDesc(this)" title="点击查看描述">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="3"/>
+                            <circle cx="8.5" cy="8.5" r="1.5"/>
+                            <polyline points="21 15 16 10 5 21"/>
+                        </svg>
+                    </div>
+                    <div class="chat-image-desc-panel" style="display:none">
+                        <div class="chat-image-desc-text">${escapeHtml(msg.typeData?.description || msg.content || '')}</div>
+                    </div>`;
+                break;
             case 'voice':
                 bubbleClass += ' voice-bubble';
                 bubbleContent = `<div class="chat-voice-content">
@@ -1543,19 +1539,23 @@ const ChatApp = (() => {
     /* ---- 特殊消息发送 ---- */
     function sendSpecialMsg(type) {
         switch (type) {
-                       case 'image':
-                bubbleClass += ' image-bubble';
-                bubbleContent = `
-                    <div class="chat-image-placeholder" onclick="ChatApp.toggleImageDesc(this)" title="点击查看描述">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="3" width="18" height="18" rx="3"/>
-                            <circle cx="8.5" cy="8.5" r="1.5"/>
-                            <polyline points="21 15 16 10 5 21"/>
-                        </svg>
-                    </div>
-                    <div class="chat-image-desc-panel" style="display:none">
-                        <div class="chat-image-desc-text">${escapeHtml(msg.typeData?.description || msg.content || '')}</div>
-                    </div>`;
+                                  case 'image':
+                Phone.showModal({
+                    title: '发送图片',
+                    content: `
+                        <div class="form-group" style="margin-bottom:0">
+                            <label class="form-label">图片描述</label>
+                            <textarea class="form-textarea" id="special-img-desc" rows="3" placeholder="描述这张图片的内容，例如：一杯热咖啡放在木桌上"></textarea>
+                        </div>`,
+                    actions: [
+                        { label: '取消', type: 'secondary' },
+                        { label: '发送', type: 'primary', onClick: async () => {
+                            const desc = document.getElementById('special-img-desc').value.trim();
+                            if (!desc) { showToast('请输入图片描述'); return; }
+                            await saveSpecialMessage('image', desc, { url: '', description: desc });
+                        }}
+                    ]
+                });
                 break;
             case 'voice':
                 Phone.showModal({
