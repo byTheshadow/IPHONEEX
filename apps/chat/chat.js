@@ -746,23 +746,77 @@ const ChatApp = (() => {
                 <div style="display:flex;justify-content:center;padding:40px"><div class="chat-spinner"></div></div>
             </div>
             <div id="chat-reply-bar-container"></div>
-                        <div class="chat-input-area" id="chat-input-area">
+                                   <div class="chat-input-area" id="chat-input-area">
                 <div class="chat-input-toolbar" id="chat-input-toolbar">
-                    <button class="chat-toolbar-btn" onclick="ChatApp.toggleStickerPanel()" title="表情包">😀</button>
-                    <button class="chat-toolbar-btn" onclick="ChatApp.sendSpecialMsg('image')" title="图片">🖼</button>
-                    <button class="chat-toolbar-btn" onclick="ChatApp.sendSpecialMsg('voice')" title="语音">🎤</button>
-                    <button class="chat-toolbar-btn" onclick="ChatApp.sendSpecialMsg('transfer')" title="转账">💰</button>
-                    <button class="chat-toolbar-btn" onclick="ChatApp.sendSpecialMsg('location')" title="位置">📍</button>
-                    <button class="chat-toolbar-btn" onclick="ChatApp.sendSpecialMsg('gift')" title="礼物">🎁</button>
+                    <button class="chat-toolbar-btn" onclick="ChatApp.toggleStickerPanel()" title="表情包">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M8 13s1.5 2 4 2 4-2 4-2"/>
+                            <line x1="9" y1="9" x2="9.01" y2="9" stroke-width="2.5"/>
+                            <line x1="15" y1="9" x2="15.01" y2="9" stroke-width="2.5"/>
+                        </svg>
+                    </button>
+                    <button class="chat-toolbar-btn" onclick="ChatApp.sendSpecialMsg('image')" title="图片">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="3"/>
+                            <circle cx="8.5" cy="8.5" r="1.5"/>
+                            <polyline points="21 15 16 10 5 21"/>
+                        </svg>
+                    </button>
+                    <button class="chat-toolbar-btn" onclick="ChatApp.sendSpecialMsg('voice')" title="语音">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                            <line x1="12" y1="19" x2="12" y2="23"/>
+                            <line x1="8" y1="23" x2="16" y2="23"/>
+                        </svg>
+                    </button>
+                    <button class="chat-toolbar-btn" onclick="ChatApp.sendSpecialMsg('transfer')" title="转账">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="5" width="20" height="14" rx="2"/>
+                            <line x1="2" y1="10" x2="22" y2="10"/>
+                            <line x1="6" y1="15" x2="10" y2="15"/>
+                        </svg>
+                    </button>
+                    <button class="chat-toolbar-btn" onclick="ChatApp.sendSpecialMsg('location')" title="位置">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                            <circle cx="12" cy="10" r="3"/>
+                        </svg>
+                    </button>
+                    <button class="chat-toolbar-btn" onclick="ChatApp.sendSpecialMsg('gift')" title="礼物">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 12 20 22 4 22 4 12"/>
+                            <rect x="2" y="7" width="20" height="5" rx="1"/>
+                            <line x1="12" y1="22" x2="12" y2="7"/>
+                            <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/>
+                            <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
+                        </svg>
+                    </button>
                 </div>
                 <div class="chat-input-row">
-                    <button class="chat-expand-btn" id="chat-expand-btn" onclick="ChatApp.toggleToolbar()" title="更多">+</button>
+                    <button class="chat-expand-btn" id="chat-expand-btn" onclick="ChatApp.toggleToolbar()" title="更多">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <line x1="12" y1="5" x2="12" y2="19"/>
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                    </button>
                     <div class="chat-input-wrapper">
                         <textarea class="chat-input" id="chat-input" placeholder="输入消息..." rows="1"></textarea>
                     </div>
                     <div class="chat-send-btns">
-                        <button class="chat-send-btn chat-send-silent" id="btn-send-silent" onclick="ChatApp.sendSilent()" title="发送（AI不回复）">↑</button>
-                        <button class="chat-send-btn chat-send-trigger" id="btn-send-trigger" onclick="ChatApp.sendAndTrigger()" title="发送并触发AI回复">⟩</button>
+                        <button class="chat-send-btn chat-send-silent" id="btn-send-silent" onclick="ChatApp.sendSilent()" title="发送（AI不回复）">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="12" y1="19" x2="12" y2="5"/>
+                                <polyline points="5 12 12 5 19 12"/>
+                            </svg>
+                        </button>
+                        <button class="chat-send-btn chat-send-trigger" id="btn-send-trigger" onclick="ChatApp.sendAndTrigger()" title="发送并触发AI回复">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="22" y1="2" x2="11" y2="13"/>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                            </svg>
+                        </button>
                     </div>
                 </div>
             </div>

@@ -1544,4 +1544,18 @@
     0%, 100% { opacity: 1; }
     50% { opacity: 0; }
 }
+.chat-toolbar-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+.chat-expand-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.chat-send-btn svg {
+    width: 16px;
+    height: 16px;
+}
 
