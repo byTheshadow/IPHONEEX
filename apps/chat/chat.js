@@ -32,14 +32,16 @@ const ChatApp = (() => {
        ============================================ */
     async function renderList() {
         return `<div class="chat-list-container">
-            <div class="app-header">
-                <button class="app-header-btn app-back-btn" onclick="Router.closeAll()">返回</button>
-                <span class="app-header-title">聊天</span>
+            <div class="app-header" style="justify-content: center; padding-top: 10px;">
+                <span style="width:60px"></span>
+                <span class="app-header-title" style="font-size: 18px; font-weight: 600;">Messages</span>
                 <span style="width:60px"></span>
             </div>
             <div class="chat-search-bar">
-                <input class="chat-search-input" placeholder="搜索会话..." id="chat-search"></div>
-            <div class="chat-contact-list" id="chat-list-body"><div style="display:flex;justify-content:center;padding:40px"><div class="chat-spinner"></div></div>
+                <input class="chat-search-input" placeholder="🔍 Search" id="chat-search">
+            </div>
+            <div class="chat-contact-list" id="chat-list-body">
+                <div style="display:flex;justify-content:center;padding:40px"><div class="chat-spinner"></div></div>
             </div>
             <button class="chat-fab" id="chat-fab" title="新建">＋</button>
         </div>`;
@@ -84,26 +86,56 @@ const ChatApp = (() => {
             return;
         }
 
-        container.innerHTML = filtered.map(chat => {
-            const firstChar = chat.characterIds?.[0] ? charMap[chat.characterIds[0]] : null;
-            const avatar = firstChar?.avatar
-                ? `<img src="${escapeHtml(firstChar.avatar)}" alt="">`
-                : (firstChar?.name?.[0] || chat.name?.[0] || '💬');
-            const typeLabel = chat.type === 'group' ? '👥 ' : chat.type === 'model' ? '🤖 ' : '';
-            return `
-            <div class="chat-contact-item" data-chat-id="${chat.id}">
-                <div class="chat-contact-avatar">${avatar}</div>
-                <div class="chat-contact-info">
-                    <div class="chat-contact-name">${typeLabel}${escapeHtml(chat.name)}</div>
-                    <div class="chat-contact-preview">${escapeHtml(chat.lastMessage || '暂无消息')}</div>
-                </div>
-                <div class="chat-contact-meta">
-                    <span class="chat-contact-time">${chat.updatedAt ? fmtDate(chat.updatedAt) : ''}</span>
-                </div>
-            </div>`;
-        }).join('');
+        let html = '';
 
-        container.querySelectorAll('.chat-contact-item').forEach(el => {
+        // 分离：前 3 个放到顶部 (如果有搜索关键词，则不显示顶部卡片)
+        const recentChats = filtered.slice(0, 3);
+        const listChats = filtered.slice(3); // 剩下的放到下面列表
+
+        if (recentChats.length > 0 && !search) {
+            html += `<div class="chat-recent-list">`;
+            html += recentChats.map(chat => {
+                const firstChar = chat.characterIds?.[0] ? charMap[chat.characterIds[0]] : null;
+                const avatar = firstChar?.avatar
+                    ? `<img src="${escapeHtml(firstChar.avatar)}" alt="">`
+                    : (firstChar?.name?.[0] || chat.name?.[0] || '💬');
+                return `
+                <div class="chat-recent-item" data-chat-id="${chat.id}">
+                    <div class="chat-recent-avatar">${avatar}</div>
+                    <div class="chat-recent-name">${escapeHtml(chat.name)}</div>
+                </div>`;
+            }).join('');
+            html += `</div>`;
+        }
+
+        // 下方的竖向列表 (如果有搜索，直接显示全部)
+        const chatsToRender = search ? filtered : listChats;
+        
+        if (chatsToRender.length > 0) {
+            html += chatsToRender.map(chat => {
+                const firstChar = chat.characterIds?.[0] ? charMap[chat.characterIds[0]] : null;
+                const avatar = firstChar?.avatar
+                    ? `<img src="${escapeHtml(firstChar.avatar)}" alt="">`
+                    : (firstChar?.name?.[0] || chat.name?.[0] || '💬');
+                const typeLabel = chat.type === 'group' ? '👥 ' : chat.type === 'model' ? '🤖 ' : '';
+                return `
+                <div class="chat-contact-item" data-chat-id="${chat.id}">
+                    <div class="chat-contact-avatar">${avatar}</div>
+                    <div class="chat-contact-info">
+                        <div class="chat-contact-name">${typeLabel}${escapeHtml(chat.name)}</div>
+                    </div>
+                    <div class="chat-contact-meta">
+                        <span class="chat-contact-time">${chat.updatedAt ? fmtDate(chat.updatedAt) : ''}</span>
+                        <span class="chat-contact-arrow">›</span>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        container.innerHTML = html;
+
+        // 绑定点击与长按事件（包括顶部的圆形卡片和下方的列表项）
+        container.querySelectorAll('.chat-contact-item, .chat-recent-item').forEach(el => {
             el.addEventListener('click', () => Router.open('chat', { chatId: el.dataset.chatId }));
             let pressTimer;
             el.addEventListener('contextmenu', e => { e.preventDefault(); showChatContextMenu(e, el.dataset.chatId); });
