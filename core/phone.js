@@ -7,7 +7,6 @@ const Phone = (() => {
     let isDragging = false;
     let isMouseDown = false;
     let touchStartY = 0;
-    let touchStartY = 0;
 
     const defaultApps = [
         { id: 'chat',     name: '聊天',   icon: '💬', color: 'rgba(255,255,255,0.08)' },
