@@ -729,99 +729,74 @@ const ChatApp = (() => {
             ? `<img src="${escapeHtml(mainChar.avatar)}" alt="">`
             : (mainChar?.name?.[0] || '🤖');
 
-        return `
+                return `
         <div class="chat-view" id="chat-view">
             <div class="chat-header">
-                <button class="app-header-btn app-back-btn" onclick="ChatApp.exitChat()">返回</button>
+                <button class="chat-header-btn app-back-btn" onclick="ChatApp.exitChat()" title="返回" style="width:36px;height:36px">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px">
+                        <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                </button>
                 <div class="chat-header-avatar">${avatar}</div>
                 <div class="chat-header-info">
                     <div class="chat-header-name">${escapeHtml(chatName)}</div>
                     <div class="chat-header-status" id="chat-status">${chat.type === 'group' ? chars.length + ' 位成员' : '在线'}</div>
                 </div>
                 <div class="chat-header-actions">
-                    <button class="chat-header-btn" onclick="ChatApp.openChatMenu()" title="菜单">☰</button>
+                    <button class="chat-header-btn" onclick="ChatApp.openChatMenu()" title="菜单">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:18px;height:18px">
+                            <circle cx="12" cy="5" r="1.2" fill="currentColor"/>
+                            <circle cx="12" cy="12" r="1.2" fill="currentColor"/>
+                            <circle cx="12" cy="19" r="1.2" fill="currentColor"/>
+                        </svg>
+                    </button>
                 </div>
             </div>
             <div class="chat-messages" id="chat-messages">
                 <div style="display:flex;justify-content:center;padding:40px"><div class="chat-spinner"></div></div>
             </div>
             <div id="chat-reply-bar-container"></div>
-                                   <div class="chat-input-area" id="chat-input-area">
+            <div class="chat-input-area" id="chat-input-area">
                 <div class="chat-input-toolbar" id="chat-input-toolbar">
                     <button class="chat-toolbar-btn" onclick="ChatApp.toggleStickerPanel()" title="表情包">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"/>
-                            <path d="M8 13s1.5 2 4 2 4-2 4-2"/>
-                            <line x1="9" y1="9" x2="9.01" y2="9" stroke-width="2.5"/>
-                            <line x1="15" y1="9" x2="15.01" y2="9" stroke-width="2.5"/>
-                        </svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 13s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9" stroke-width="2.5"/><line x1="15" y1="9" x2="15.01" y2="9" stroke-width="2.5"/></svg>
                     </button>
                     <button class="chat-toolbar-btn" onclick="ChatApp.sendSpecialMsg('image')" title="图片">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="3" width="18" height="18" rx="3"/>
-                            <circle cx="8.5" cy="8.5" r="1.5"/>
-                            <polyline points="21 15 16 10 5 21"/>
-                        </svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                     </button>
                     <button class="chat-toolbar-btn" onclick="ChatApp.sendSpecialMsg('voice')" title="语音">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                            <line x1="12" y1="19" x2="12" y2="23"/>
-                            <line x1="8" y1="23" x2="16" y2="23"/>
-                        </svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
                     </button>
                     <button class="chat-toolbar-btn" onclick="ChatApp.sendSpecialMsg('transfer')" title="转账">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="2" y="5" width="20" height="14" rx="2"/>
-                            <line x1="2" y1="10" x2="22" y2="10"/>
-                            <line x1="6" y1="15" x2="10" y2="15"/>
-                        </svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg>
                     </button>
                     <button class="chat-toolbar-btn" onclick="ChatApp.sendSpecialMsg('location')" title="位置">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                            <circle cx="12" cy="10" r="3"/>
-                        </svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                     </button>
                     <button class="chat-toolbar-btn" onclick="ChatApp.sendSpecialMsg('gift')" title="礼物">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="20 12 20 22 4 22 4 12"/>
-                            <rect x="2" y="7" width="20" height="5" rx="1"/>
-                            <line x1="12" y1="22" x2="12" y2="7"/>
-                            <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/>
-                            <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
-                        </svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5" rx="1"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
                     </button>
                 </div>
                 <div class="chat-toolbar-divider"></div>
                 <div class="chat-input-row">
                     <button class="chat-expand-btn" id="chat-expand-btn" onclick="ChatApp.toggleToolbar()" title="更多">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                            <line x1="12" y1="5" x2="12" y2="19"/>
-                            <line x1="5" y1="12" x2="19" y2="12"/>
-                        </svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     </button>
                     <div class="chat-input-wrapper">
                         <textarea class="chat-input" id="chat-input" placeholder="输入消息..." rows="1"></textarea>
                     </div>
                     <div class="chat-send-btns">
                         <button class="chat-send-btn chat-send-silent" id="btn-send-silent" onclick="ChatApp.sendSilent()" title="发送（AI不回复）">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="12" y1="19" x2="12" y2="5"/>
-                                <polyline points="5 12 12 5 19 12"/>
-                            </svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
                         </button>
                         <button class="chat-send-btn chat-send-trigger" id="btn-send-trigger" onclick="ChatApp.sendAndTrigger()" title="发送并触发AI回复">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="22" y1="2" x2="11" y2="13"/>
-                                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                            </svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                         </button>
                     </div>
                 </div>
             </div>
         </div>`;
+
     }
 
     async function initChatView(chatId) {
@@ -955,10 +930,24 @@ const ChatApp = (() => {
                 bubbleClass += ' sticker-bubble';
                 bubbleContent = `<img class="chat-sticker-img" src="${escapeHtml(msg.typeData?.url || '')}" alt="${escapeHtml(msg.typeData?.description || '')}" onerror="this.alt='表情加载失败';this.style.padding='20px';this.style.fontSize='12px';this.style.color='var(--text-tertiary)'">`;
                 break;
-            case 'image':
-                bubbleClass += ' image-bubble';
-                bubbleContent = `<div class="chat-image-content"><img src="${escapeHtml(msg.typeData?.url || '')}" alt="" onerror="this.parentElement.innerHTML='<div style=\\'padding:20px;text-align:center;color:var(--text-tertiary);font-size:12px\\'>图片加载失败</div>'"></div>${msg.typeData?.description ? `<div class="chat-image-desc">${escapeHtml(msg.typeData.description)}</div>` : ''}`;
-                break;
+                   case 'image':
+            Phone.showModal({
+                title: '发送图片',
+                content: `
+                    <div class="form-group" style="margin-bottom:0">
+                        <label class="form-label">图片描述</label>
+                        <textarea class="form-textarea" id="special-img-desc" rows="3" placeholder="描述这张图片的内容，例如：一杯热咖啡放在木桌上"></textarea>
+                    </div>`,
+                actions: [
+                    { label: '取消', type: 'secondary' },
+                    { label: '发送', type: 'primary', onClick: async () => {
+                        const desc = document.getElementById('special-img-desc').value.trim();
+                        if (!desc) { showToast('请输入图片描述'); return; }
+                        await saveSpecialMessage('image', desc, { url: '', description: desc });
+                    }}
+                ]
+            });
+            break;
             case 'voice':
                 bubbleClass += ' voice-bubble';
                 bubbleContent = `<div class="chat-voice-content">
@@ -1541,31 +1530,32 @@ const ChatApp = (() => {
             Logger.error('Summary failed', e.message);
         }
     }
+    /* ---- 图片描述展开/收起 ---- */
+    function toggleImageDesc(placeholderEl) {
+        const bubble = placeholderEl.closest('.chat-bubble');
+        const descPanel = bubble.querySelector('.chat-image-desc-panel');
+        if (!descPanel) return;
+        const isVisible = descPanel.style.display !== 'none';
+        descPanel.style.display = isVisible ? 'none' : 'block';
+        placeholderEl.classList.toggle('active', !isVisible);
+    }
 
     /* ---- 特殊消息发送 ---- */
     function sendSpecialMsg(type) {
         switch (type) {
-            case 'image':
-                Phone.showModal({
-                    title: '发送图片',
-                    content: `
-                        <div class="form-group">
-                            <label class="form-label">图片 URL</label>
-                            <input class="form-input" id="special-img-url" placeholder="https://...">
-                        </div>
-                        <div class="form-group" style="margin-bottom:0">
-                            <label class="form-label">描述（可选）</label>
-                            <input class="form-input" id="special-img-desc" placeholder="图片描述">
-                        </div>`,
-                    actions: [
-                        { label: '取消', type: 'secondary' },
-                        { label: '发送', type: 'primary', onClick: async () => {
-                            const url = document.getElementById('special-img-url').value.trim();
-                            if (!url) { showToast('请输入图片URL'); return; }
-                            await saveSpecialMessage('image', '[图片]', { url, description: document.getElementById('special-img-desc').value.trim() });
-                        }}
-                    ]
-                });
+                       case 'image':
+                bubbleClass += ' image-bubble';
+                bubbleContent = `
+                    <div class="chat-image-placeholder" onclick="ChatApp.toggleImageDesc(this)" title="点击查看描述">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="3"/>
+                            <circle cx="8.5" cy="8.5" r="1.5"/>
+                            <polyline points="21 15 16 10 5 21"/>
+                        </svg>
+                    </div>
+                    <div class="chat-image-desc-panel" style="display:none">
+                        <div class="chat-image-desc-text">${escapeHtml(msg.typeData?.description || msg.content || '')}</div>
+                    </div>`;
                 break;
             case 'voice':
                 Phone.showModal({
@@ -2045,10 +2035,10 @@ const ChatApp = (() => {
     }
 
     /* ======== 公开 API ======== */
-        return {
+           return {
         render, init,
         backToList, addSticker, createKnowledgeBook, openKnowledgeManager, openStickerManager,
-        exitChat, sendSilent, sendAndTrigger, sendSpecialMsg, toggleStickerPanel, toggleToolbar,
+        exitChat, sendSilent, sendAndTrigger, sendSpecialMsg, toggleStickerPanel, toggleToolbar, toggleImageDesc,
         openChatMenu, clearReply, retryLastResponse,
         addKBEntry, removeKBEntry, toggleKBEntry, saveKBEntry,
         editSummary, editDiary, openPromptSettings,

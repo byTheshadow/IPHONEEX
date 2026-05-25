@@ -920,6 +920,48 @@
     background: var(--text-tertiary);
     box-shadow: 0 3px 0 var(--text-tertiary);
 }
+/* 图片占位区（无URL时显示） */
+.chat-image-placeholder {
+    width: 160px;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--glass-bg-light);
+    cursor: pointer;
+    transition: background 0.2s;
+    border-radius: 20px 20px 0 0; /* 配合气泡圆角 */
+}
+
+.chat-msg-row.user .chat-image-placeholder {
+    border-radius: 20px 20px 0 0;
+}
+
+.chat-image-placeholder svg {
+    width: 40px;
+    height: 40px;
+    color: var(--text-tertiary);
+    transition: color 0.2s, transform 0.2s;
+}
+
+.chat-image-placeholder:hover svg,
+.chat-image-placeholder.active svg {
+    color: var(--accent);
+    transform: scale(1.1);
+}
+
+/* 描述面板 */
+.chat-image-desc-panel {
+    padding: 10px 14px;
+    border-top: 1px solid var(--glass-border-light);
+}
+
+.chat-image-desc-text {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    word-break: break-word;
+}
 
 /* ---------- 正在输入指示器 ---------- */
 .chat-typing-indicator {
